@@ -1979,7 +1979,7 @@ dependencies = [
 [[package]]
 name = "pedersen-hash"
 version = "0.1.0"
-source = "git+https://github.com/webb-tools/webb-rs.git?branch=bump-ethers#ee861addf1c8b3a22f5e98074489706c11d39b5a"
+source = "git+https://github.com/webb-tools/webb-rs.git?branch=bump-ethers#5fec2beacb87746b8042d5054219384aa0803266"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ed-on-bn254",
@@ -3319,7 +3319,7 @@ dependencies = [
 [[package]]
 name = "webb"
 version = "0.1.0"
-source = "git+https://github.com/webb-tools/webb-rs.git?branch=bump-ethers#ee861addf1c8b3a22f5e98074489706c11d39b5a"
+source = "git+https://github.com/webb-tools/webb-rs.git?branch=bump-ethers#5fec2beacb87746b8042d5054219384aa0803266"
 dependencies = [
  "async-trait",
  "ethereum-types",
