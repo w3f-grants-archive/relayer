@@ -34,6 +34,7 @@ native-tls = { version = "^0.2", features = ["vendored"] }
 [dependencies.webb]
 version = "0.1.0"
 git = "https://github.com/webb-tools/webb-rs.git"
+branch = "bump-ethers"
 default-features = false
 features = ["evm-runtime"]
 
