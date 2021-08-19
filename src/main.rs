@@ -18,6 +18,7 @@ mod config;
 mod context;
 mod handler;
 mod leaf_cache;
+mod proposal_watcher;
 
 #[cfg(test)]
 mod test_utils;
@@ -226,4 +227,48 @@ where
 
     start_network_watcher_for!(Ganache, Beresheet, Harmony, Rinkeby);
     Ok(store)
+}
+
+async fn start_proposal_watching_service(ctx: &RelayerContext) -> anyhow::Result<()> {
+    macro_rules! start_network_watcher_for {
+        ($chain: ident) => {
+            let contracts = chains::evm::$chain::contracts()
+            .into_values()
+            .collect::<Vec<_>>();
+            for contract in contracts {
+                let watcher = proposal_watcher::ProposalWatcher::new(
+                    chains::evm::$chain::ws_endpoint(),
+                );
+                let task = async move {
+                    tokio::select! {
+                        _ = watcher.run() => {
+                            tracing::warn!("proposal watcher for {} stopped", stringify!($chain));
+                        },
+                        _ = tokio::signal::ctrl_c() => {
+                            tracing::debug!(
+                                "Stopping the proposal watcher for {} ({})",
+                                stringify!($chain),
+                                contract.address,
+                            );
+                        }
+                    };
+                };
+                tracing::debug!(
+                    "proposal watcher for {} ({}) Started.",
+                    stringify!($chain),
+                    contract.address,
+                );
+                tokio::task::spawn(task);
+            }
+        };
+        ($($chain: ident),+) => {
+            $(
+                start_network_watcher_for!($chain);
+            )+
+        }
+    }
+
+    start_network_watcher_for!(Ganache, Beresheet, Harmony, Rinkeby);
+
+    Ok(())
 }
