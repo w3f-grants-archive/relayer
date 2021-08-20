@@ -110,4 +110,31 @@ impl RelayerContext {
             Rinkeby = rinkeby
         }
     }
+
+    pub fn is_network_configured<C: EvmChain>(&self) -> bool {
+        let evm = &self.config.evm;
+
+        macro_rules! is_configured {
+            ($($chain: ident = $f: ident),+) => {
+                match C::name() {
+                    $(
+                        ChainName::$chain if evm.$f.is_some() => {
+                            true
+                        }
+                    )+
+                    _ => false,
+                }
+            }
+        }
+
+        is_configured! {
+            Edgeware = edgeware,
+            Webb = webb,
+            Ganache = ganache,
+            Beresheet = beresheet,
+            Harmony = harmony,
+            Rinkeby = rinkeby
+        }
+    }
+
 }

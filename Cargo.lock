@@ -496,6 +496,37 @@ dependencies = [
 ]
 
 [[package]]
+name = "camino"
+version = "1.0.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "52d74260d9bf6944e2208aa46841b4b8f0d7ffc0849a06837b2f510337f86b2b"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "cargo-platform"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cbdb825da8a5df079a43676dbe042702f1707b1109f713a01420fbb4cc71fa27"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "cargo_metadata"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c297bd3135f558552f99a0daa180876984ea2c4ffa7470314540dff8c654109a"
+dependencies = [
+ "camino",
+ "cargo-platform",
+ "semver 1.0.4",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "cc"
 version = "1.0.69"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -896,8 +927,8 @@ dependencies = [
 
 [[package]]
 name = "ethers"
-version = "0.4.0"
-source = "git+https://github.com/gakonst/ethers-rs?rev=9fc142c#9fc142ca615123ace787fbb8c1c65a5718b60f77"
+version = "0.4.1"
+source = "git+https://github.com/gakonst/ethers-rs?rev=621882053c8cb1c1d98074e9921bf6e997bbd58a#621882053c8cb1c1d98074e9921bf6e997bbd58a"
 dependencies = [
  "ethers-contract",
  "ethers-core",
@@ -908,8 +939,8 @@ dependencies = [
 
 [[package]]
 name = "ethers-contract"
-version = "0.4.0"
-source = "git+https://github.com/gakonst/ethers-rs?rev=9fc142c#9fc142ca615123ace787fbb8c1c65a5718b60f77"
+version = "0.4.7"
+source = "git+https://github.com/gakonst/ethers-rs?rev=621882053c8cb1c1d98074e9921bf6e997bbd58a#621882053c8cb1c1d98074e9921bf6e997bbd58a"
 dependencies = [
  "ethers-contract-abigen",
  "ethers-contract-derive",
@@ -926,16 +957,19 @@ dependencies = [
 
 [[package]]
 name = "ethers-contract-abigen"
-version = "0.4.0"
-source = "git+https://github.com/gakonst/ethers-rs?rev=9fc142c#9fc142ca615123ace787fbb8c1c65a5718b60f77"
+version = "0.4.7"
+source = "git+https://github.com/gakonst/ethers-rs?rev=621882053c8cb1c1d98074e9921bf6e997bbd58a#621882053c8cb1c1d98074e9921bf6e997bbd58a"
 dependencies = [
  "Inflector",
  "anyhow",
+ "cargo_metadata",
  "ethers-core",
  "hex",
+ "once_cell",
  "proc-macro2",
  "quote",
  "reqwest",
+ "serde",
  "serde_json",
  "syn",
  "url",
@@ -943,8 +977,8 @@ dependencies = [
 
 [[package]]
 name = "ethers-contract-derive"
-version = "0.4.0"
-source = "git+https://github.com/gakonst/ethers-rs?rev=9fc142c#9fc142ca615123ace787fbb8c1c65a5718b60f77"
+version = "0.4.7"
+source = "git+https://github.com/gakonst/ethers-rs?rev=621882053c8cb1c1d98074e9921bf6e997bbd58a#621882053c8cb1c1d98074e9921bf6e997bbd58a"
 dependencies = [
  "ethers-contract-abigen",
  "ethers-core",
@@ -957,15 +991,14 @@ dependencies = [
 
 [[package]]
 name = "ethers-core"
-version = "0.4.0"
-source = "git+https://github.com/gakonst/ethers-rs?rev=9fc142c#9fc142ca615123ace787fbb8c1c65a5718b60f77"
+version = "0.4.8"
+source = "git+https://github.com/gakonst/ethers-rs?rev=621882053c8cb1c1d98074e9921bf6e997bbd58a#621882053c8cb1c1d98074e9921bf6e997bbd58a"
 dependencies = [
  "arrayvec 0.7.1",
  "bytes",
  "ecdsa",
  "elliptic-curve",
  "ethabi",
- "funty",
  "futures-util",
  "generic-array 0.14.4",
  "glob",
@@ -973,6 +1006,7 @@ dependencies = [
  "k256",
  "rand",
  "rlp",
+ "rlp-derive",
  "serde",
  "serde_json",
  "thiserror",
@@ -982,8 +1016,8 @@ dependencies = [
 
 [[package]]
 name = "ethers-middleware"
-version = "0.4.0"
-source = "git+https://github.com/gakonst/ethers-rs?rev=9fc142c#9fc142ca615123ace787fbb8c1c65a5718b60f77"
+version = "0.4.8"
+source = "git+https://github.com/gakonst/ethers-rs?rev=621882053c8cb1c1d98074e9921bf6e997bbd58a#621882053c8cb1c1d98074e9921bf6e997bbd58a"
 dependencies = [
  "async-trait",
  "ethers-contract",
@@ -1004,8 +1038,8 @@ dependencies = [
 
 [[package]]
 name = "ethers-providers"
-version = "0.4.0"
-source = "git+https://github.com/gakonst/ethers-rs?rev=9fc142c#9fc142ca615123ace787fbb8c1c65a5718b60f77"
+version = "0.4.6"
+source = "git+https://github.com/gakonst/ethers-rs?rev=621882053c8cb1c1d98074e9921bf6e997bbd58a#621882053c8cb1c1d98074e9921bf6e997bbd58a"
 dependencies = [
  "async-trait",
  "auto_impl",
@@ -1031,8 +1065,8 @@ dependencies = [
 
 [[package]]
 name = "ethers-signers"
-version = "0.4.0"
-source = "git+https://github.com/gakonst/ethers-rs?rev=9fc142c#9fc142ca615123ace787fbb8c1c65a5718b60f77"
+version = "0.4.6"
+source = "git+https://github.com/gakonst/ethers-rs?rev=621882053c8cb1c1d98074e9921bf6e997bbd58a#621882053c8cb1c1d98074e9921bf6e997bbd58a"
 dependencies = [
  "async-trait",
  "coins-bip32",
@@ -1387,9 +1421,9 @@ dependencies = [
 
 [[package]]
 name = "httparse"
-version = "1.4.1"
+version = "1.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f3a87b616e37e93c22fb19bcd386f02f3af5ea98a25670ad0fce773de23c5e68"
+checksum = "acd94fdbe1d4ff688b67b04eee2e17bd50995534a61539e45adfefb45e5e5503"
 
 [[package]]
 name = "httpdate"
@@ -1558,9 +1592,9 @@ dependencies = [
 
 [[package]]
 name = "js-sys"
-version = "0.3.52"
+version = "0.3.53"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce791b7ca6638aae45be056e068fc756d871eb3b3b10b8efa62d1c9cec616752"
+checksum = "e4bf49d50e2961077d9c99f4b7997d770a1114f087c3c2e0069b36c13fc2979d"
 dependencies = [
  "wasm-bindgen",
 ]
@@ -1945,7 +1979,7 @@ dependencies = [
 [[package]]
 name = "pedersen-hash"
 version = "0.1.0"
-source = "git+https://github.com/webb-tools/webb-rs.git#d9d5145a36922648cbf22efe3abbba487a895cad"
+source = "git+https://github.com/webb-tools/webb-rs.git?branch=add-bridge-contract#6a0d9132024a35192d310246d557abab3914cd9f"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ed-on-bn254",
@@ -2281,6 +2315,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "rlp-derive"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e33d7b2abe0c340d8797fe2907d3f20d3b5ea5908683618bfe80df7f621f672a"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "rustc-hex"
 version = "2.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2292,7 +2337,7 @@ version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f0dfe2087c51c460008730de8b57e6a320782fbfb312e1f4d520e6c6fae155ee"
 dependencies = [
- "semver",
+ "semver 0.11.0",
 ]
 
 [[package]]
@@ -2411,6 +2456,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f301af10236f6df4160f7c3f04eec6dbc70ace82d23326abad5edee88801c6b6"
 dependencies = [
  "semver-parser",
+]
+
+[[package]]
+name = "semver"
+version = "1.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "568a8e6258aa33c13358f81fd834adb854c6f7c9468520910a9b1e8fac068012"
+dependencies = [
+ "serde",
 ]
 
 [[package]]
@@ -3186,9 +3240,9 @@ checksum = "fd6fbd9a79829dd1ad0cc20627bf1ed606756a7f77edff7b66b7064f9cb327c6"
 
 [[package]]
 name = "wasm-bindgen"
-version = "0.2.75"
+version = "0.2.76"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b608ecc8f4198fe8680e2ed18eccab5f0cd4caaf3d83516fa5fb2e927fda2586"
+checksum = "8ce9b1b516211d33767048e5d47fa2a381ed8b76fc48d2ce4aa39877f9f183e0"
 dependencies = [
  "cfg-if",
  "serde",
@@ -3198,9 +3252,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-backend"
-version = "0.2.75"
+version = "0.2.76"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "580aa3a91a63d23aac5b6b267e2d13cb4f363e31dce6c352fca4752ae12e479f"
+checksum = "cfe8dc78e2326ba5f845f4b5bf548401604fa20b1dd1d365fb73b6c1d6364041"
 dependencies = [
  "bumpalo",
  "lazy_static",
@@ -3213,9 +3267,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-futures"
-version = "0.4.25"
+version = "0.4.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "16646b21c3add8e13fdb8f20172f8a28c3dbf62f45406bcff0233188226cfe0c"
+checksum = "95fded345a6559c2cfee778d562300c581f7d4ff3edb9b0d230d69800d213972"
 dependencies = [
  "cfg-if",
  "js-sys",
@@ -3225,9 +3279,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-macro"
-version = "0.2.75"
+version = "0.2.76"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "171ebf0ed9e1458810dfcb31f2e766ad6b3a89dbda42d8901f2b268277e5f09c"
+checksum = "44468aa53335841d9d6b6c023eaab07c0cd4bddbcfdee3e2bb1e8d2cb8069fef"
 dependencies = [
  "quote",
  "wasm-bindgen-macro-support",
@@ -3235,9 +3289,9 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-macro-support"
-version = "0.2.75"
+version = "0.2.76"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6c2657dd393f03aa2a659c25c6ae18a13a4048cebd220e147933ea837efc589f"
+checksum = "0195807922713af1e67dc66132c7328206ed9766af3858164fb583eedc25fbad"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -3248,15 +3302,15 @@ dependencies = [
 
 [[package]]
 name = "wasm-bindgen-shared"
-version = "0.2.75"
+version = "0.2.76"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2e0c4a743a309662d45f4ede961d7afa4ba4131a59a639f29b0069c3798bbcc2"
+checksum = "acdb075a845574a1fa5f09fd77e43f7747599301ea3417a9fbffdeedfc1f4a29"
 
 [[package]]
 name = "web-sys"
-version = "0.3.52"
+version = "0.3.53"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "01c70a82d842c9979078c772d4a1344685045f1a5628f677c2b2eab4dd7d2696"
+checksum = "224b2f6b67919060055ef1a67807367c2066ed520c3862cc013d26cf893a783c"
 dependencies = [
  "js-sys",
  "wasm-bindgen",
@@ -3265,7 +3319,7 @@ dependencies = [
 [[package]]
 name = "webb"
 version = "0.1.0"
-source = "git+https://github.com/webb-tools/webb-rs.git#d9d5145a36922648cbf22efe3abbba487a895cad"
+source = "git+https://github.com/webb-tools/webb-rs.git?branch=add-bridge-contract#6a0d9132024a35192d310246d557abab3914cd9f"
 dependencies = [
  "async-trait",
  "ethereum-types",

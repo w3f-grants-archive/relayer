@@ -52,6 +52,7 @@ async fn main(args: Opts) -> anyhow::Result<()> {
     let config = load_config(args.config_filename.clone())?;
     let ctx = RelayerContext::new(config);
     let store = start_leave_cache_service(args.config_filename, &ctx).await?;
+    start_proposal_watching_service(&ctx).await?;
     let (addr, server) = build_relayer(ctx, store)?;
     tracing::info!("Starting the server on {}", addr);
     // fire the server.
@@ -232,12 +233,16 @@ where
 async fn start_proposal_watching_service(ctx: &RelayerContext) -> anyhow::Result<()> {
     macro_rules! start_network_watcher_for {
         ($chain: ident) => {
+            let network_configured = ctx.is_network_configured::<chains::evm::$chain>();
+
             let contracts = chains::evm::$chain::contracts()
             .into_values()
+            .filter(|_| network_configured)
             .collect::<Vec<_>>();
             for contract in contracts {
                 let watcher = proposal_watcher::ProposalWatcher::new(
                     chains::evm::$chain::ws_endpoint(),
+                    contract.address,
                 );
                 let task = async move {
                     tokio::select! {
