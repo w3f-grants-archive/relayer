@@ -71,7 +71,7 @@ async function main() {
     console.log('Starting the Relayer ..');
   
     // get all relayer information
-    const relayerInfo = await getRelayerConfig('beresheet', 'http://localhost:9955');
+    const relayerInfo = await getRelayerConfig(chains[i]!.name, 'http://localhost:9955');
     const contractDenomination = await getAnchorDenomination(
       chains[i]!.contractAddress,
       provider
