@@ -1979,7 +1979,7 @@ dependencies = [
 [[package]]
 name = "pedersen-hash"
 version = "0.1.0"
-source = "git+https://github.com/webb-tools/webb-rs.git?branch=add-bridge-contract#6a0d9132024a35192d310246d557abab3914cd9f"
+source = "git+https://github.com/webb-tools/webb-rs.git?branch=add-bridge-contract#463ace7eda6d60293f131367d52b1a4933710a89"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ed-on-bn254",
@@ -3319,7 +3319,7 @@ dependencies = [
 [[package]]
 name = "webb"
 version = "0.1.0"
-source = "git+https://github.com/webb-tools/webb-rs.git?branch=add-bridge-contract#6a0d9132024a35192d310246d557abab3914cd9f"
+source = "git+https://github.com/webb-tools/webb-rs.git?branch=add-bridge-contract#463ace7eda6d60293f131367d52b1a4933710a89"
 dependencies = [
  "async-trait",
  "ethereum-types",

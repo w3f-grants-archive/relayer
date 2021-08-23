@@ -1,14 +1,13 @@
-use std::fmt::{self, Debug};
+use std::fmt::{Debug};
 use std::sync::Arc;
 
 use anyhow::Error;
 use ethers::prelude::*;
 use futures::prelude::*;
-// use std::collections::HashMap;
 use std::time::Duration;
 use tracing::Instrument;
 use webb::evm::ethers;
-// use webb::evm::contract::bridge::BridgeContract;
+use webb::evm::contract::bridge::BridgeContract;
 
 #[derive(Debug, Clone)]
 pub struct ProposalWatcher {
@@ -57,21 +56,21 @@ impl ProposalWatcher {
 
     async fn poll_for_proposals(&self, client: Arc<Provider<Ws>>) -> Result<(), backoff::Error<Error>> {
         // now we start polling for new events.
-        // let mut block = client.get_block_number().map_err(Error::from).await?;
-        // let contract = BridgeContract::new(self.contract, client.clone());
+        let mut block = client.get_block_number().map_err(Error::from).await?;
+        let contract = BridgeContract::new(self.contract, client.clone());
 
         loop {
             let current_block_number = client.get_block_number().map_err(Error::from).await?;
-            // let events_filter = contract.deposit_filter()
-            //     .from_block(block)
-            //     .to_block(current_block_number);
-            // let found_events = events_filter.query_with_meta().map_err(Error::from).await?;
+            let events_filter = contract.proposal_event_filter()
+                .from_block(block)
+                .to_block(current_block_number);
+            let found_events = events_filter.query_with_meta().map_err(Error::from).await?;
 
-            // tracing::trace!("Found #{} proposals", found_events.len());
+            tracing::trace!("Found #{} proposals", found_events.len());
 
-            // tracing::trace!("Polled from #{} to #{}", block, current_block_number);
+            tracing::trace!("Polled from #{} to #{}", block, current_block_number);
 
-            // block = current_block_number;
+            block = current_block_number;
 
             tracing::trace!("Current block number (proposals): #{}", current_block_number);
 
