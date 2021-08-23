@@ -206,6 +206,7 @@ pub struct LeavesWatcher<S> {
     store: S,
     contract: Address,
     start_block_number: u64,
+    polling_interval_ms: u64,
 }
 
 impl<S> LeavesWatcher<S>
@@ -217,12 +218,14 @@ where
         store: S,
         contract: Address,
         start_block_number: u64,
+        polling_interval_ms: u64,
     ) -> Self {
         Self {
             ws_endpoint: ws_endpoint.into(),
             contract,
             store,
             start_block_number,
+            polling_interval_ms,
         }
     }
 
@@ -257,7 +260,10 @@ where
     }
 
     #[tracing::instrument(skip(self), fields(contract = %self.contract))]
-    async fn fetch_previous_deposits(&self, client: Arc<Provider<Ws>>) -> anyhow::Result<(), backoff::Error<Error>> {
+    async fn fetch_previous_deposits(
+        &self,
+        client: Arc<Provider<Ws>>,
+    ) -> anyhow::Result<(), backoff::Error<Error>> {
         let contract = AnchorContract::new(self.contract, client.clone());
         let mut block = self.store.get_last_block_number(
             contract.address(),
@@ -308,7 +314,10 @@ where
     }
 
     #[tracing::instrument(skip(self), fields(contract = %self.contract))]
-    async fn poll_for_events(&self, client: Arc<Provider<Ws>>) -> Result<(), backoff::Error<Error>> {
+    async fn poll_for_events(
+        &self,
+        client: Arc<Provider<Ws>>,
+    ) -> Result<(), backoff::Error<Error>> {
         let mut block = self.store.get_last_block_number(
             self.contract,
             self.start_block_number.into(),
@@ -317,9 +326,14 @@ where
 
         // now we start polling for new events.
         loop {
-            let current_block_number = client.get_block_number().map_err(Error::from).await?;
-            let events_filter = contract.deposit_filter().from_block(block).to_block(current_block_number);
-            let found_events = events_filter.query_with_meta().map_err(Error::from).await?;
+            let current_block_number =
+                client.get_block_number().map_err(Error::from).await?;
+            let events_filter = contract
+                .deposit_filter()
+                .from_block(block)
+                .to_block(current_block_number);
+            let found_events =
+                events_filter.query_with_meta().map_err(Error::from).await?;
 
             tracing::trace!("Found #{} events", found_events.len());
 
@@ -330,19 +344,28 @@ where
                 )?;
             }
 
-            tracing::trace!("Polled from #{} to #{}", block, current_block_number);
-            self.store
-                    .set_last_block_number(contract.address(), current_block_number)?;
+            tracing::trace!(
+                "Polled from #{} to #{}",
+                block,
+                current_block_number
+            );
+            self.store.set_last_block_number(
+                contract.address(),
+                current_block_number,
+            )?;
 
             block = current_block_number;
 
-            tokio::time::sleep(Duration::from_secs(30)).await;
+            tokio::time::sleep(Duration::from_millis(self.polling_interval_ms))
+                .await;
         }
     }
 
     #[tracing::instrument(skip(self), fields(contract = %self.contract))]
-    async fn stream_for_events(&self, client: Arc<Provider<Ws>>) -> Result<(), backoff::Error<Error>> {
-        
+    async fn stream_for_events(
+        &self,
+        client: Arc<Provider<Ws>>,
+    ) -> Result<(), backoff::Error<Error>> {
         let contract = AnchorContract::new(self.contract, client.clone());
         let block = self.store.get_last_block_number(
             self.contract,
@@ -362,13 +385,22 @@ where
                         contract.address(),
                         &[(e.leaf_index, H256::from_slice(&e.commitment))],
                     )?;
-                    tracing::trace!("Got new Event at block {}", log.block_number);
-                    self.store
-                        .set_last_block_number(contract.address(), log.block_number)?;
-                },
+                    tracing::trace!(
+                        "Got new Event at block {}",
+                        log.block_number
+                    );
+                    self.store.set_last_block_number(
+                        contract.address(),
+                        log.block_number,
+                    )?;
+                }
                 None => {
-                    let e = backoff::Error::Transient(anyhow::anyhow!("Reconnect"));
-                    tracing::warn!("Connection Dropped from {}", self.ws_endpoint);
+                    let e =
+                        backoff::Error::Transient(anyhow::anyhow!("Reconnect"));
+                    tracing::warn!(
+                        "Connection Dropped from {}",
+                        self.ws_endpoint
+                    );
                     tracing::info!("Restarting the task for {}", self.contract);
                     return Err(e);
                 }
@@ -414,13 +446,14 @@ mod tests {
             store.clone(),
             contract_address,
             0,
+            1,
         );
         // run the leaves watcher in another task
         let task_handle = tokio::task::spawn(leaves_watcher.run());
         // then, make another deposit, while the watcher is running.
         make_deposit(&mut rng, &contract, &mut expected_leaves).await?;
         // sleep for the duration of the polling interval
-        tokio::time::sleep(Duration::from_secs(30)).await;
+        tokio::time::sleep(Duration::from_secs(7)).await;
         // it should now contains the 2 leaves when the watcher was offline, and
         // the new one that happened while it is watching.
         let leaves = store.get_leaves(contract_address)?;
@@ -434,6 +467,7 @@ mod tests {
             store.clone(),
             contract_address,
             0,
+            1,
         );
         let task_handle = tokio::task::spawn(leaves_watcher.run());
         tracing::debug!("Waiting for 5s allowing the task to run..");

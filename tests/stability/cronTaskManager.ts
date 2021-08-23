@@ -1,7 +1,7 @@
 import { ethers } from 'ethers';
 const cron = require('node-cron');
 require('dotenv').config({ path: '.env' });
-import { create_slack_alert } from './dispatchSlackNotification';
+import { create_slack_alert } from '../scripts/dispatchSlackNotification';
 import WebSocket from 'ws';
 import { 
   generateSnarkProof,
@@ -16,7 +16,8 @@ import {
   getRelayerConfig,
   generateWithdrawRequest,
   handleMessage,
-  Result
+  Result,
+  sleep
 } from '../relayerUtils';
 
 type configuredChain = {
@@ -101,20 +102,17 @@ async function setupCronJobs() {
   const configuredChains = populateConfiguredChains();
   
   for (let i=0; i<configuredChains.length; i++) {
-    // Schedule for deposits
-    cron.schedule(`${i} * * * *`, async () => {
+    // Run the deposit and withdraw script below every 10 minutes.
+    cron.schedule(`${i} */10 * * * *`, async () => {
       console.log('cron job started for deposit');
       const res = await deposit(configuredChains[i]!.contractAddress, configuredChains[i]!.wallet);
-      configuredChains[i]!.deposits.push(res);
       const noteString = generateNoteString(res, configuredChains[i]!);
       console.log(noteString);
-    });
+      
+      // allow time for relayer polling to see deposit
+      await sleep(30000);
 
-    // Schedule for withdrawals
-    cron.schedule(`${2+i} * * * *`, async () => {
-      // get relayer information
       const relayerInfo = await getRelayerConfig(configuredChains[i]!.name, `${process.env.RELAYER_ENDPOINT_HTTP}`);
-      console.log(relayerInfo);
       const contractDenomination = await getAnchorDenomination(
         configuredChains[i]!.contractAddress,
         configuredChains[i]!.wallet.provider!
@@ -152,12 +150,11 @@ async function setupCronJobs() {
         create_slack_alert("Websockets communication failed.", `Error: ${err}`);
       });
 
-      // 
       console.log('Generating zkProof to do a withdraw ..');
       const leaves = await getDepositLeavesFromRelayer(configuredChains[i]!.contractAddress, `${process.env.RELAYER_ENDPOINT_HTTP}`);
       const { proof, args } = await generateSnarkProof(
         leaves,
-        configuredChains[i]!.deposits.pop(),
+        res,
         await configuredChains[i]!.wallet.getAddress(),
         relayerInfo.account,
         calculatedFee
@@ -181,7 +178,7 @@ async function setupCronJobs() {
         console.error('Relayer Connection closed!');
         create_slack_alert("Websockets client was not in open state");
       }
-    })
+    });
   }
 }
 
