@@ -19,11 +19,11 @@ impl ProposalWatcher {
 
     pub fn new(
         endpoint: impl Into<String>,
-        _contractAddress: Address,
+        _contract_address: Address,
     ) -> Self {
         Self {
             ws_endpoint: endpoint.into(),
-            contract: _contractAddress,
+            contract: _contract_address,
         }
     }
 
@@ -74,7 +74,7 @@ impl ProposalWatcher {
 
             tracing::trace!("Current block number (proposals): #{}", current_block_number);
 
-            tokio::time::sleep(Duration::from_secs(6)).await;
+            tokio::time::sleep(Duration::from_secs(30)).await;
         }
     }
 

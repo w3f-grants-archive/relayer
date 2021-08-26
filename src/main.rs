@@ -186,7 +186,7 @@ where
             // check to see if we should enable the leaves watcher
             // for this chain.
             let leaf_watcher_enabled = ctx.leaves_watcher_enabled::<chains::evm::$chain>();
-            let contracts = chains::evm::$chain::contracts()
+            let contracts = chains::evm::$chain::torn_mixers()
                 .into_values()
                 .filter(|_| leaf_watcher_enabled) // will skip all if `false`.
                 .collect::<Vec<_>>();
@@ -236,7 +236,7 @@ async fn start_proposal_watching_service(ctx: &RelayerContext) -> anyhow::Result
         ($chain: ident) => {
             let network_configured = ctx.is_network_configured::<chains::evm::$chain>();
 
-            let contracts = chains::evm::$chain::contracts()
+            let contracts = chains::evm::$chain::bridge_contracts()
             .into_values()
             .filter(|_| network_configured)
             .collect::<Vec<_>>();

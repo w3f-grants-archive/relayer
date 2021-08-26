@@ -27,11 +27,17 @@ pub mod evm {
     use webb::evm::ethereum_types::Address;
 
     #[derive(Debug, Clone, Copy)]
-    pub struct DeployedContract {
+    pub struct DeployedTornContract {
         pub address: Address,
         pub size: f64,
         pub deplyed_at: u64,
     }
+
+    #[derive(Debug, Clone, Copy)]
+    pub struct DeployedContract {
+        pub address: Address,
+    }
+    
     /// All Supported Chains by Webb Realyer.
     #[derive(Debug, Clone, Copy, Eq, PartialEq)]
     pub enum ChainName {
@@ -49,7 +55,8 @@ pub mod evm {
         fn ws_endpoint() -> &'static str;
         fn polling_interval_ms() -> u64;
         fn chain_id() -> u32;
-        fn contracts() -> HashMap<Address, DeployedContract>;
+        fn torn_mixers() -> HashMap<Address, DeployedTornContract>;
+        fn bridge_contracts() -> HashMap<Address, DeployedContract>;
     }
 
     macro_rules! define_chain {
@@ -58,11 +65,16 @@ pub mod evm {
             ws_endpoint: $ws_endpoint:expr,
             polling_interval_ms: $polling_interval_ms:expr,
             chain_id: $chain_id:expr,
-            contracts: [
+            torn_mixers: [
                 $({
                     size: $size:expr,
                     address: $address:expr,
                     at: $at:expr,
+                }),*
+            ],
+            bridge_contracts: [
+                $({
+                    address: $bridge_address:expr,
                 }),*
             ],
         }) => {
@@ -79,15 +91,28 @@ pub mod evm {
 
                 fn chain_id() -> u32 { $chain_id }
 
-                fn contracts() -> HashMap<Address, DeployedContract> {
+                fn torn_mixers() -> HashMap<Address, DeployedTornContract> {
                     #[allow(unused_mut)]
                     let mut map = HashMap::new();
                     $(
                         let address = Address::from_str($address).unwrap();
-                        let contract = DeployedContract {
+                        let contract = DeployedTornContract {
                             address,
                             size: $size as f64,
                             deplyed_at: $at,
+                        };
+                        map.insert(address, contract);
+                    )*
+                    map
+                }
+
+                fn bridge_contracts() -> HashMap<Address, DeployedContract> {
+                    #[allow(unused_mut)]
+                    let mut map = HashMap::new();
+                    $(
+                        let address = Address::from_str($bridge_address).unwrap();
+                        let contract = DeployedContract {
+                            address
                         };
                         map.insert(address, contract);
                     )*
@@ -103,7 +128,8 @@ pub mod evm {
             ws_endpoint: "wss://mainnet1.edgewa.re/evm",
             polling_interval_ms: 7000,
             chain_id: 2021,
-            contracts: [],
+            torn_mixers: [],
+            bridge_contracts: [],
         }
     }
 
@@ -113,13 +139,14 @@ pub mod evm {
             ws_endpoint: "ws://localhost:8545",
             polling_interval_ms: 1000,
             chain_id: 1337,
-            contracts: [
+            torn_mixers: [
                 {
                     size: 1,
                     address: "0xFBD61C9961e0bf872B5Ec041b718C0B2a106Ce9D",
                     at: 1,
                 }
             ],
+            bridge_contracts: [],
         }
     }
 
@@ -129,7 +156,7 @@ pub mod evm {
             ws_endpoint: "wss://beresheet.edgewa.re",
             polling_interval_ms: 7000,
             chain_id: 2022,
-            contracts: [
+            torn_mixers: [
                 {
                     size: 10,
                     address: "0xf0EA8Fa17daCF79434d10C51941D8Fc24515AbE3",
@@ -151,6 +178,7 @@ pub mod evm {
                     at: 299_740,
                 }
             ],
+            bridge_contracts: [],
         }
     }
 
@@ -160,7 +188,7 @@ pub mod evm {
             ws_endpoint: "wss://ws.s1.b.hmny.io",
             polling_interval_ms: 3000,
             chain_id: 1666700001,
-            contracts: [
+            torn_mixers: [
                 {
                     size: 0.0000000001,
                     address: "0x4c37863bf2642Ba4e8De7e746500C700540119E8",
@@ -187,6 +215,7 @@ pub mod evm {
                     at: 12_892_840,
                 }
             ],
+            bridge_contracts: [],
         }
     }
 
@@ -196,7 +225,8 @@ pub mod evm {
             ws_endpoint: "",
             polling_interval_ms: 0,
             chain_id: 0,
-            contracts: [],
+            torn_mixers: [],
+            bridge_contracts: [],
         }
     }
 
@@ -206,7 +236,7 @@ pub mod evm {
             ws_endpoint: "wss://rinkeby.infura.io/ws/v3/9aa3d95b3bc440fa88ea12eaa4456161",
             polling_interval_ms: 30000,
             chain_id: 4,
-            contracts: [
+            torn_mixers: [
                 {
                     size: 0.1,
                     address: "0x626FEc5Ffa7Bf1EE8CEd7daBdE545630473E3ABb",
@@ -216,6 +246,11 @@ pub mod evm {
                     size: 1,
                     address: "0x979cBd4917e81447983ef87591B9E1ab21727a61",
                     at: 8_896_800,
+                }
+            ],
+            bridge_contracts: [
+                {
+                    address: "0xd961d7Cf4d001EC57ff3F6F9F6428B73b7d924Bc",
                 }
             ],
         }

@@ -348,7 +348,7 @@ fn handle_evm_withdraw<'a, C: evm::EvmChain>(
 ) -> BoxStream<'a, CommandResponse> {
     use CommandResponse::*;
     let s = stream! {
-        let supported_contracts = C::contracts();
+        let supported_contracts = C::torn_mixers();
         if !supported_contracts.contains_key(&data.contract) {
             yield Network(NetworkStatus::UnsupportedContract);
             return;
