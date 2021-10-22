@@ -13,6 +13,7 @@ use futures::stream::BoxStream;
 use serde::{Deserialize, Serialize};
 use warp::ws::Message;
 use webb::evm::contract::darkwebb::AnchorContract;
+use webb::evm::contract::darkwebb::anchor::PublicInputs;
 use webb::evm::contract::tornado::TornadoContract;
 use webb::evm::ethereum_types::{Address, H256, U256};
 use webb::evm::ethers::core::k256::SecretKey;
@@ -179,6 +180,7 @@ pub struct AnchorRelayTransaction {
     pub proof: Bytes,
     /// Args...
     pub roots: Vec<u8>,
+    pub refresh_commitment: H256,
     pub nullifier_hash: H256,
     pub recipient: Address, // H160 ([u8; 20])
     pub relayer: Address,   // H160 (should be this realyer account)
@@ -507,14 +509,23 @@ fn handle_anchor_relay_tx<'a>(
             return;
         }
 
+        // pub struct PublicInputs { pub roots : Vec < u8 > , pub nullifier_hash : [u8 ; 32] , pub 
+        // refresh_commitment : [u8 ; 32] , pub recipient : ethers :: core :: types :: Address , pub relayer
+        // : ethers :: core :: types :: Address , pub fee : ethers :: core :: types :: U256 , pub refund : 
+        // ethers :: core :: types :: U256 } }
+        let inputs = PublicInputs {
+            roots: cmd.roots,
+            refresh_commitment: cmd.refresh_commitment.to_fixed_bytes(),
+            nullifier_hash: cmd.nullifier_hash.to_fixed_bytes(),
+            recipient: cmd.recipient,
+            relayer: cmd.relayer,
+            fee: cmd.fee,
+            refund: cmd.refund,
+        };
+
         let call = contract.withdraw(
             cmd.proof.to_vec(),
-            cmd.roots,
-            cmd.nullifier_hash.to_fixed_bytes(),
-            cmd.recipient,
-            cmd.relayer,
-            cmd.fee,
-            cmd.refund,
+            inputs,
         );
         // Make a dry call, to make sure the transaction will go through successfully
         // to avoid wasting fees on invalid calls.

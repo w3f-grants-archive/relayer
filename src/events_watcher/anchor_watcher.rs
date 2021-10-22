@@ -192,7 +192,7 @@ impl super::EventWatcher for AnchorWatcher<ForBridge> {
             let dest_chain_id = dest_client.get_chainid().await?;
             let dest_contract =
                 AnchorContract::new(linked_anchor.address, dest_client);
-            let contract_chain_id = dest_contract.chain_id().call().await?;
+            let contract_chain_id = dest_contract.get_chain_id().call().await?;
             // sanity check.
             assert_eq!(dest_chain_id, contract_chain_id);
             let dest_bridge = dest_contract.bridge().call().await?;
