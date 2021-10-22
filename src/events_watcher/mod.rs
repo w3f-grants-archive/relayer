@@ -9,8 +9,8 @@ use webb::evm::ethers::{contract, providers, types};
 
 use crate::store::{HistoryStore, ProposalStore, TxQueueStore};
 
-mod anchor_leaves_watcher;
-pub use anchor_leaves_watcher::*;
+mod tornado_leaves_watcher;
+pub use tornado_leaves_watcher::*;
 
 mod anchor2_watcher;
 pub use anchor2_watcher::*;

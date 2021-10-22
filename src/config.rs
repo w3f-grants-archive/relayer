@@ -107,7 +107,7 @@ pub struct LinkedAnchorConfig {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "contract")]
 pub enum Contract {
-    Anchor(AnchorContractConfig),
+    Tornado(TornadoContractConfig),
     Anchor2(Anchor2ContractConfig),
     Bridge(BridgeContractConfig),
     GovernanceBravoDelegate(GovernanceBravoDelegateContractConfig),
@@ -125,7 +125,7 @@ pub struct CommonContractConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
-pub struct AnchorContractConfig {
+pub struct TornadoContractConfig {
     #[serde(flatten)]
     pub common: CommonContractConfig,
     /// Controls the events watcher

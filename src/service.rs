@@ -25,8 +25,8 @@ pub async fn ignite(
 
         for contract in &chain_config.contracts {
             match contract {
-                Contract::Anchor(config) => {
-                    start_anchor_events_watcher(
+                Contract::Tornado(config) => {
+                    start_tornado_events_watcher(
                         ctx,
                         config,
                         client.clone(),
@@ -58,39 +58,39 @@ pub async fn ignite(
     Ok(())
 }
 
-fn start_anchor_events_watcher(
+fn start_tornado_events_watcher(
     ctx: &RelayerContext,
-    config: &AnchorContractConfig,
+    config: &TornadoContractConfig,
     client: Arc<Client>,
     store: Arc<Store>,
 ) -> anyhow::Result<()> {
     // check first if we should start the events watcher for this contract.
     if !config.events_watcher.enabled {
         tracing::warn!(
-            "Anchor events watcher is disabled for ({}).",
+            "Tornado events watcher is disabled for ({}).",
             config.common.address,
         );
         return Ok(());
     }
-    let wrapper = AnchorContractWrapper::new(config.clone(), client.clone());
+    let wrapper = TornadoContractWrapper::new(config.clone(), client.clone());
     tracing::debug!(
-        "Anchor events watcher for ({}) Started.",
+        "Tornado events watcher for ({}) Started.",
         config.common.address,
     );
-    let watcher = AnchorLeavesWatcher.run(client, store, wrapper);
+    let watcher = TornadoLeavesWatcher.run(client, store, wrapper);
     let mut shutdown_signal = ctx.shutdown_signal();
     let contract_address = config.common.address;
     let task = async move {
         tokio::select! {
             _ = watcher => {
                 tracing::warn!(
-                    "Anchor events watcher stopped for ({})",
+                    "Tornado events watcher stopped for ({})",
                     contract_address,
                 );
             },
             _ = shutdown_signal.recv() => {
                 tracing::trace!(
-                    "Stopping Anchor events watcher for ({})",
+                    "Stopping Tornado events watcher for ({})",
                     contract_address,
                 );
             },

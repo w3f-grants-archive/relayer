@@ -64,21 +64,21 @@ private-key = "0x891717439617178349617341913761823519235910613047813764716340031
 # chain contracts
 [[evm.harmony.contracts]]
 # The contract can be one of these values
-# - Anchor (tornado protocol)
+# - Tornado (tornado protocol)
 # - Anchor2 (darkwebb protocol)
 # - Bridge
 # - GovernanceBravoDelegate
-contract = "Anchor"
+contract = "Tornado"
 # The address of this contract on this chain.
 address = "0x4c37863bf2642Ba4e8De7e746500C700540119E8"
 # the block number where this contract got deployed at.
 deployed-at = 13600000
 # The size of this contract
-# Note: only available for `Anchor` and `Anchor2` contracts.
+# Note: only available for `Tornado` and `Anchor2` contracts.
 # and would error otherwise.
 size = 0.0000000001
 # control the events watcher for this contract
-# Note: only available for `Anchor` and `Anchor2` contracts.
+# Note: only available for `Tornado` and `Anchor2` contracts.
 events-watcher = { enabled = false, polling-interval = 3000 }
 # The fee percentage that your account will receive when you relay a transaction
 # over this chain.
@@ -88,7 +88,7 @@ withdraw-fee-percentage = 0.05
 withdraw-gaslimit = "0x350000"
 
 [[evm.harmony.contracts]]
-contract = "Anchor"
+contract = "Tornado"
 address = "0x7cd1F52e5EEdf753e99D945276a725CE533AaD1a"
 deployed-at = 12040000
 size = 100

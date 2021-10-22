@@ -3622,8 +3622,7 @@ dependencies = [
 [[package]]
 name = "webb"
 version = "0.2.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d2e0dad95f7988cad18087bb0a931a831f0915030601b5fd3b3e042be73e2615"
+source = "git+https://github.com/webb-tools/webb-rs?branch=nathan.tornado-rename#2e71e6e48a1a80bde2c5116074119925416528c5"
 dependencies = [
  "async-trait",
  "ethereum-types",
@@ -3640,8 +3639,7 @@ dependencies = [
 [[package]]
 name = "webb-pedersen-hash"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e20bb5d3cf671d5ee15f7590197a9778c01da5a54db8aef00e4584fc3585ef3e"
+source = "git+https://github.com/webb-tools/webb-rs?branch=nathan.tornado-rename#2e71e6e48a1a80bde2c5116074119925416528c5"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ed-on-bn254",
