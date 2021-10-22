@@ -8,14 +8,14 @@ export type RelayerChainConfig = {
   account: string;
 };
 
-export const generateAnchorWithdrawRequest = (
+export const generateTornadoWithdrawRequest = (
   chainName: string,
   contractAddress: string,
   proof: string,
   args: string[]
 ) => ({
   evm: {
-    anchorRelayTx: {
+    tornadoRelayTx: {
       chain: chainName,
       contract: contractAddress,
       proof,
