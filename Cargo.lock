@@ -3621,8 +3621,8 @@ dependencies = [
 
 [[package]]
 name = "webb"
-version = "0.2.2"
-source = "git+https://github.com/webb-tools/webb-rs?branch=nathan.tornado-rename#2e71e6e48a1a80bde2c5116074119925416528c5"
+version = "0.2.3"
+source = "git+https://github.com/webb-tools/webb-rs?branch=nathan.implement-multi-edge-anchor#c9433ad94649da0683409b7972dd7a672b01dffb"
 dependencies = [
  "async-trait",
  "ethereum-types",
@@ -3639,7 +3639,7 @@ dependencies = [
 [[package]]
 name = "webb-pedersen-hash"
 version = "0.1.0"
-source = "git+https://github.com/webb-tools/webb-rs?branch=nathan.tornado-rename#2e71e6e48a1a80bde2c5116074119925416528c5"
+source = "git+https://github.com/webb-tools/webb-rs?branch=nathan.implement-multi-edge-anchor#c9433ad94649da0683409b7972dd7a672b01dffb"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ed-on-bn254",

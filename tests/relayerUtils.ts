@@ -29,14 +29,14 @@ export const generateTornadoWithdrawRequest = (
   },
 });
 
-export const generateAnchor2WithdrawRequest = (
+export const generateAnchorWithdrawRequest = (
   chainName: string,
   contractAddress: string,
   proof: string,
   args: string[]
 ) => ({
   evm: {
-    anchor2RelayTx: {
+    anchorRelayTx: {
       chain: chainName,
       contract: contractAddress,
       proof,

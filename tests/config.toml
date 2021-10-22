@@ -38,7 +38,7 @@ private-key = "0x174956394745285067845635284967453723920375659587352384958162654
 [[evm.harmonytestnet1.contracts]]
 # The contract can be one of these values
 # - Tornado (tornado protocol)
-# - Anchor2 (darkwebb protocol)
+# - Anchor (darkwebb protocol)
 # - Bridge
 # - GovernanceBravoDelegate
 contract = "Tornado"
@@ -47,7 +47,7 @@ address = "0x4c37863bf2642Ba4e8De7e746500C700540119E8"
 # the block number where this contract got deployed at.
 deployed-at = 13600000
 # The size of this contract
-# Note: only available for `Tornado` and `Anchor2` contracts.
+# Note: only available for `Tornado` and `Anchor` contracts.
 # and would error otherwise.
 size = 0.0000000001
 # control the events watcher for this contract
@@ -76,7 +76,7 @@ chain-id = 1666700000
 private-key = "0x1749563947452850678456352849674537239203756595873523849581626549"
 # chain contracts
 [[evm.harmonytestnet0.contracts]]
-contract = "Anchor2"
+contract = "Anchor"
 address = "0x64E9727C4a835D518C34d3A50A8157120CAeb32F"
 deployed-at = 15183626
 size = 0.0000000001
@@ -138,7 +138,7 @@ withdraw-fee-percentage = 0.05
 withdraw-gaslimit = "0x350000"
 
 [[evm.rinkeby.contracts]]
-contract = "Anchor2"
+contract = "Anchor"
 address = "0xB42139fFcEF02dC85db12aC9416a19A12381167D"
 deployed-at = 9326378
 size = 0.1

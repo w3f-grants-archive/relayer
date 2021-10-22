@@ -33,8 +33,8 @@ pub async fn ignite(
                         store.clone(),
                     )?;
                 }
-                Contract::Anchor2(config) => {
-                    start_anchor2_events_watcher(
+                Contract::Anchor(config) => {
+                    start_anchor_events_watcher(
                         ctx,
                         config,
                         client.clone(),
@@ -101,30 +101,30 @@ fn start_tornado_events_watcher(
     Ok(())
 }
 
-fn start_anchor2_events_watcher(
+fn start_anchor_events_watcher(
     ctx: &RelayerContext,
-    config: &Anchor2ContractConfig,
+    config: &AnchorContractConfig,
     client: Arc<Client>,
     store: Arc<Store>,
 ) -> anyhow::Result<()> {
     if !config.events_watcher.enabled {
         tracing::warn!(
-            "Anchor2 events watcher is disabled for ({}).",
+            "Anchor events watcher is disabled for ({}).",
             config.common.address,
         );
         return Ok(());
     }
-    let wrapper = Anchor2ContractWrapper::new(
+    let wrapper = AnchorContractWrapper::new(
         config.clone(),
         ctx.config.clone(), // the original config to access all networks.
         client.clone(),
     );
     tracing::debug!(
-        "Anchor2 events watcher for ({}) Started.",
+        "Anchor events watcher for ({}) Started.",
         config.common.address,
     );
 
-    static LEAVES_WATCHER: Anchor2LeavesWatcher = Anchor2LeavesWatcher::new();
+    static LEAVES_WATCHER: AnchorLeavesWatcher = AnchorLeavesWatcher::new();
     let leaves_watcher_task = EventWatcher::run(
         &LEAVES_WATCHER,
         client.clone(),
@@ -132,7 +132,7 @@ fn start_anchor2_events_watcher(
         wrapper.clone(),
     );
 
-    static BRIDGE_WATCHER: Anchor2BridgeWatcher = Anchor2BridgeWatcher::new();
+    static BRIDGE_WATCHER: AnchorBridgeWatcher = AnchorBridgeWatcher::new();
     let bridge_watcher_task =
         EventWatcher::run(&BRIDGE_WATCHER, client, store, wrapper);
     let mut shutdown_signal = ctx.shutdown_signal();
@@ -141,19 +141,19 @@ fn start_anchor2_events_watcher(
         tokio::select! {
             _ = leaves_watcher_task => {
                 tracing::warn!(
-                    "Anchor2 leaves watcher task stopped for ({})",
+                    "Anchor leaves watcher task stopped for ({})",
                     contract_address,
                 );
             },
             _ = bridge_watcher_task => {
                 tracing::warn!(
-                    "Anchor2 bridge watcher task stopped for ({})",
+                    "Anchor bridge watcher task stopped for ({})",
                     contract_address,
                 );
             },
             _ = shutdown_signal.recv() => {
                 tracing::trace!(
-                    "Stopping Anchor2 watcher for ({})",
+                    "Stopping Anchor watcher for ({})",
                     contract_address,
                 );
             },

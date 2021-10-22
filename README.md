@@ -65,7 +65,7 @@ private-key = "0x891717439617178349617341913761823519235910613047813764716340031
 [[evm.harmony.contracts]]
 # The contract can be one of these values
 # - Tornado (tornado protocol)
-# - Anchor2 (darkwebb protocol)
+# - Anchor (darkwebb protocol)
 # - Bridge
 # - GovernanceBravoDelegate
 contract = "Tornado"
@@ -74,11 +74,11 @@ address = "0x4c37863bf2642Ba4e8De7e746500C700540119E8"
 # the block number where this contract got deployed at.
 deployed-at = 13600000
 # The size of this contract
-# Note: only available for `Tornado` and `Anchor2` contracts.
+# Note: only available for `Tornado` and `Anchor` contracts.
 # and would error otherwise.
 size = 0.0000000001
 # control the events watcher for this contract
-# Note: only available for `Tornado` and `Anchor2` contracts.
+# Note: only available for `Tornado` and `Anchor` contracts.
 events-watcher = { enabled = false, polling-interval = 3000 }
 # The fee percentage that your account will receive when you relay a transaction
 # over this chain.

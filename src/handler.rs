@@ -12,7 +12,7 @@ use futures::prelude::*;
 use futures::stream::BoxStream;
 use serde::{Deserialize, Serialize};
 use warp::ws::Message;
-use webb::evm::contract::darkwebb::Anchor2Contract;
+use webb::evm::contract::darkwebb::AnchorContract;
 use webb::evm::contract::tornado::TornadoContract;
 use webb::evm::ethereum_types::{Address, H256, U256};
 use webb::evm::ethers::core::k256::SecretKey;
@@ -147,7 +147,7 @@ pub struct SubstrateCommand {}
 #[serde(rename_all = "camelCase")]
 pub enum EvmCommand {
     TornadoRelayTx(TornadoRelayTransaction),
-    Anchor2RelayTx(Anchor2RelayTransaction),
+    AnchorRelayTx(AnchorRelayTransaction),
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -170,7 +170,7 @@ pub struct TornadoRelayTransaction {
 
 #[derive(Debug, Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Anchor2RelayTransaction {
+pub struct AnchorRelayTransaction {
     /// one of the supported chains of this realyer
     pub chain: String,
     /// The target contract.
@@ -247,7 +247,7 @@ pub fn handle_evm<'a>(
 ) -> BoxStream<'a, CommandResponse> {
     match cmd {
         EvmCommand::TornadoRelayTx(cmd) => handle_tornado_relay_tx(ctx, cmd),
-        EvmCommand::Anchor2RelayTx(cmd) => handle_anchor2_relay_tx(ctx, cmd),
+        EvmCommand::AnchorRelayTx(cmd) => handle_anchor_relay_tx(ctx, cmd),
     }
 }
 
@@ -406,9 +406,9 @@ fn handle_tornado_relay_tx<'a>(
     s.boxed()
 }
 
-fn handle_anchor2_relay_tx<'a>(
+fn handle_anchor_relay_tx<'a>(
     ctx: RelayerContext,
-    cmd: Anchor2RelayTransaction,
+    cmd: AnchorRelayTransaction,
 ) -> BoxStream<'a, CommandResponse> {
     use CommandResponse::*;
     let s = stream! {
@@ -425,7 +425,7 @@ fn handle_anchor2_relay_tx<'a>(
             .iter()
             .cloned()
             .filter_map(|c| match c {
-                crate::config::Contract::Anchor2(c) => Some(c),
+                crate::config::Contract::Anchor(c) => Some(c),
                 _ => None,
             })
             .map(|c| (c.common.address, c))
@@ -482,7 +482,7 @@ fn handle_anchor2_relay_tx<'a>(
 
         let client = SignerMiddleware::new(provider, wallet);
         let client = Arc::new(client);
-        let contract = Anchor2Contract::new(cmd.contract, client);
+        let contract = AnchorContract::new(cmd.contract, client);
         let denomination = match contract.denomination().call().await {
             Ok(v) => v,
             Err(e) => {

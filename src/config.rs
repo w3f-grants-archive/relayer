@@ -100,7 +100,7 @@ pub struct LinkedAnchorConfig {
     /// The Chain name where this anchor belongs to.
     /// and it is case-insensitive.
     pub chain: String,
-    /// The Anchor2 Contract Address.
+    /// The Anchor Contract Address.
     pub address: Address,
 }
 
@@ -108,7 +108,7 @@ pub struct LinkedAnchorConfig {
 #[serde(tag = "contract")]
 pub enum Contract {
     Tornado(TornadoContractConfig),
-    Anchor2(Anchor2ContractConfig),
+    Anchor(AnchorContractConfig),
     Bridge(BridgeContractConfig),
     GovernanceBravoDelegate(GovernanceBravoDelegateContractConfig),
 }
@@ -140,7 +140,7 @@ pub struct TornadoContractConfig {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
-pub struct Anchor2ContractConfig {
+pub struct AnchorContractConfig {
     #[serde(flatten)]
     pub common: CommonContractConfig,
     /// Controls the events watcher
@@ -151,7 +151,7 @@ pub struct Anchor2ContractConfig {
     /// Anchor withdraw configuration.
     #[serde(flatten)]
     pub withdraw_config: AnchorWithdrawConfig,
-    /// A List of linked Anchor2 Contracts (on other chains) to this contract.
+    /// A List of linked Anchor Contracts (on other chains) to this contract.
     #[serde(rename(serialize = "linkedAnchors"))]
     pub linked_anchors: Vec<LinkedAnchorConfig>,
 }
@@ -252,20 +252,20 @@ fn postloading_process(
     }
     // check that all required chains are already present in the config.
     for (chain_name, chain_config) in &config.evm {
-        let anchors2 = chain_config.contracts.iter().filter_map(|c| match c {
-            Contract::Anchor2(cfg) => Some(cfg),
+        let anchors = chain_config.contracts.iter().filter_map(|c| match c {
+            Contract::Anchor(cfg) => Some(cfg),
             _ => None,
         });
-        for anchor2 in anchors2 {
-            for linked_anchor in &anchor2.linked_anchors {
+        for anchor in anchors {
+            for linked_anchor in &anchor.linked_anchors {
                 let chain = linked_anchor.chain.to_lowercase();
                 let chain_defined = config.evm.contains_key(&chain);
                 if !chain_defined {
                     tracing::warn!("!!WARNING!!: chain {} is not defined in the config.
-                        which is required by the Anchor2 Contract ({}) defined on {} chain.
+                        which is required by the Anchor Contract ({}) defined on {} chain.
                         Please, define it manually, to allow the relayer to work properly.",
                         chain,
-                        anchor2.common.address,
+                        anchor.common.address,
                         chain_name
                     );
                 }

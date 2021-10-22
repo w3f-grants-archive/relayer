@@ -12,8 +12,8 @@ use crate::store::{HistoryStore, ProposalStore, TxQueueStore};
 mod tornado_leaves_watcher;
 pub use tornado_leaves_watcher::*;
 
-mod anchor2_watcher;
-pub use anchor2_watcher::*;
+mod anchor_watcher;
+pub use anchor_watcher::*;
 
 mod bridge_watcher;
 pub use bridge_watcher::*;
