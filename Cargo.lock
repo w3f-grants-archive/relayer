@@ -4896,7 +4896,7 @@ dependencies = [
 [[package]]
 name = "webb"
 version = "0.2.5"
-source = "git+https://github.com/webb-tools/webb-rs?branch=nathan/update-v2-contracts#f293d89f93cb8fa6d08246417fceb8a75f1e4b04"
+source = "git+https://github.com/webb-tools/webb-rs?branch=main#0061410dba2aa4bcb9e6e001755eba4f7df593ed"
 dependencies = [
  "async-trait",
  "ethers",
@@ -4914,7 +4914,7 @@ dependencies = [
 [[package]]
 name = "webb-pedersen-hash"
 version = "0.1.0"
-source = "git+https://github.com/webb-tools/webb-rs?branch=nathan/update-v2-contracts#f293d89f93cb8fa6d08246417fceb8a75f1e4b04"
+source = "git+https://github.com/webb-tools/webb-rs?branch=main#0061410dba2aa4bcb9e6e001755eba4f7df593ed"
 dependencies = [
  "ark-crypto-primitives",
  "ark-ed-on-bn254",
