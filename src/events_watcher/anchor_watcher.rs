@@ -4,15 +4,16 @@ use std::ops;
 use std::sync::Arc;
 use std::time::Duration;
 
-use webb::evm::contract::darkwebb::AnchorContract;
-use webb::evm::contract::darkwebb::AnchorContractEvents;
-use webb::evm::ethers::prelude::*;
+use webb::evm::contract::protocol_solidity::FixedDepositAnchorContract;
+use webb::evm::contract::protocol_solidity::FixedDepositAnchorContractEvents;
+use webb::evm::contract::protocol_solidity::AnchorHandlerContract;
+use webb::evm::ethers::contract::{LogMeta, Contract};
 use webb::evm::ethers::providers;
 use webb::evm::ethers::types;
 
 use crate::config;
 use crate::events_watcher::ProposalData;
-use crate::events_watcher::{BridgeCommand, BridgeKey};
+use crate::events_watcher::{BridgeCommand, BridgeKey, Middleware};
 use crate::store::sled::{SledQueueKey, SledStore};
 use crate::store::{LeafCacheStore, QueueStore};
 
@@ -37,7 +38,7 @@ pub type AnchorBridgeWatcher = AnchorWatcher<ForBridge>;
 pub struct AnchorContractWrapper<M: Middleware> {
     config: config::AnchorContractConfig,
     webb_config: config::WebbRelayerConfig,
-    contract: AnchorContract<M>,
+    contract: FixedDepositAnchorContract<M>,
 }
 
 impl<M: Middleware> AnchorContractWrapper<M> {
@@ -47,7 +48,7 @@ impl<M: Middleware> AnchorContractWrapper<M> {
         client: Arc<M>,
     ) -> Self {
         Self {
-            contract: AnchorContract::new(config.common.address, client),
+            contract: FixedDepositAnchorContract::new(config.common.address, client),
             config,
             webb_config,
         }
@@ -90,7 +91,7 @@ impl super::EventWatcher for AnchorWatcher<ForLeaves> {
 
     type Contract = AnchorContractWrapper<Self::Middleware>;
 
-    type Events = AnchorContractEvents;
+    type Events = FixedDepositAnchorContractEvents;
 
     type Store = SledStore;
 
@@ -101,12 +102,12 @@ impl super::EventWatcher for AnchorWatcher<ForLeaves> {
         wrapper: &Self::Contract,
         (event, log): (Self::Events, LogMeta),
     ) -> anyhow::Result<()> {
-        use AnchorContractEvents::*;
+        use FixedDepositAnchorContractEvents::*;
         match event {
             DepositFilter(deposit) => {
                 let commitment = deposit.commitment;
                 let leaf_index = deposit.leaf_index;
-                let value = (leaf_index, H256::from_slice(&commitment));
+                let value = (leaf_index, types::H256::from_slice(&commitment));
                 let chain_id = wrapper.contract.client().get_chainid().await?;
                 store.insert_leaves(
                     (chain_id, wrapper.contract.address()),
@@ -159,7 +160,7 @@ impl super::EventWatcher for AnchorWatcher<ForBridge> {
 
     type Contract = AnchorContractWrapper<Self::Middleware>;
 
-    type Events = AnchorContractEvents;
+    type Events = FixedDepositAnchorContractEvents;
 
     type Store = SledStore;
 
@@ -170,7 +171,7 @@ impl super::EventWatcher for AnchorWatcher<ForBridge> {
         wrapper: &Self::Contract,
         (event, _): (Self::Events, LogMeta),
     ) -> anyhow::Result<()> {
-        use AnchorContractEvents::*;
+        use FixedDepositAnchorContractEvents::*;
         // only process anchor deposit events.
         let event_data = match event {
             DepositFilter(data) => data,
@@ -219,7 +220,7 @@ impl super::EventWatcher for AnchorWatcher<ForBridge> {
             let dest_client = Arc::new(provider);
             let dest_chain_id = dest_client.get_chainid().await?;
             let dest_contract =
-                AnchorContract::new(linked_anchor.address, dest_client);
+                FixedDepositAnchorContract::new(linked_anchor.address, dest_client.clone());
             let experimental = wrapper.webb_config.experimental;
             let retry_count = if experimental.smart_anchor_updates {
                 // this just a sane number of retries, before we actually issue the update proposal
@@ -258,8 +259,14 @@ impl super::EventWatcher for AnchorWatcher<ForBridge> {
                 tracing::debug!("sleep for {}s before signaling the bridge", s);
                 tokio::time::sleep(Duration::from_secs(s)).await;
             }
-            let dest_bridge = dest_contract.bridge().call().await?;
-            let dest_handler = dest_contract.handler().call().await?;
+            // Get the handler for the anchor
+            let dest_handler_address = dest_contract.handler().call().await?;
+            let dest_handler = 
+                AnchorHandlerContract::new(dest_handler_address, dest_client);
+
+            // Get the bridge from the handler
+            let dest_bridge = dest_handler.bridge_address().call().await?;
+
             let key = BridgeKey::new(dest_bridge, dest_chain_id);
             tracing::debug!(
                 "Signaling Bridge@{} to create a new proposal from Anchor@{}",
@@ -270,7 +277,7 @@ impl super::EventWatcher for AnchorWatcher<ForBridge> {
                 SledQueueKey::from_bridge_key(key),
                 BridgeCommand::CreateProposal(ProposalData {
                     anchor_address: dest_contract.address(),
-                    anchor_handler_address: dest_handler,
+                    anchor_handler_address: dest_handler_address,
                     origin_chain_id,
                     leaf_index,
                     merkle_root: root,

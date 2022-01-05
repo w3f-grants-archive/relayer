@@ -4,7 +4,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use futures::prelude::*;
-use webb::evm::ethers::prelude::transaction;
+use webb::evm::ethers::core::types::transaction;
 use webb::evm::ethers::providers::Middleware;
 use webb::evm::ethers::{contract, providers, types};
 

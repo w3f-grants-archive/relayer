@@ -31,8 +31,8 @@ private-key = "$HARMONYTESTNET1_PRIVATE_KEY"
 # chain contracts
 [[evm.harmonytestnet1.contracts]]
 # The contract can be one of these values
-# - Anchor (tornado protocol)
-# - Anchor2 (darkwebb protocol)
+# - Tornado (tornado protocol)
+# - Anchor (solidity protocol)
 # - Bridge
 # - GovernanceBravoDelegate
 contract = "Tornado"

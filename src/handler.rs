@@ -13,8 +13,8 @@ use serde::{Deserialize, Serialize};
 use tokio::sync::mpsc;
 use tokio_stream::wrappers::ReceiverStream;
 use warp::ws::Message;
-use webb::evm::contract::darkwebb::anchor::PublicInputs;
-use webb::evm::contract::darkwebb::AnchorContract;
+use webb::evm::contract::protocol_solidity::fixed_deposit_anchor::PublicInputs;
+use webb::evm::contract::protocol_solidity::FixedDepositAnchorContract;
 use webb::evm::contract::tornado::TornadoContract;
 use webb::evm::ethers::contract::ContractError;
 use webb::evm::ethers::core::k256::SecretKey;
@@ -390,7 +390,7 @@ async fn handle_tornado_relay_tx<'a>(
     }
 
     let call = contract.withdraw(
-        cmd.proof.to_vec(),
+        cmd.proof,
         cmd.root.to_fixed_bytes(),
         cmd.nullifier_hash.to_fixed_bytes(),
         cmd.recipient,
@@ -547,7 +547,7 @@ async fn handle_anchor_relay_tx<'a>(
 
     let client = SignerMiddleware::new(provider, wallet);
     let client = Arc::new(client);
-    let contract = AnchorContract::new(cmd.contract, client);
+    let contract = FixedDepositAnchorContract::new(cmd.contract, client);
     let denomination = match contract.denomination().call().await {
         Ok(v) => v,
         Err(e) => {
@@ -578,7 +578,7 @@ async fn handle_anchor_relay_tx<'a>(
     }
 
     let inputs = PublicInputs {
-        roots: cmd.roots,
+        roots: Bytes::from(cmd.roots),
         refresh_commitment: cmd.refresh_commitment.to_fixed_bytes(),
         nullifier_hash: cmd.nullifier_hash.to_fixed_bytes(),
         recipient: cmd.recipient,
@@ -587,7 +587,7 @@ async fn handle_anchor_relay_tx<'a>(
         refund: cmd.refund,
     };
 
-    let call = contract.withdraw(cmd.proof.to_vec(), inputs);
+    let call = contract.withdraw(cmd.proof, inputs);
     // Make a dry call, to make sure the transaction will go through successfully
     // to avoid wasting fees on invalid calls.
     match call.call().await {

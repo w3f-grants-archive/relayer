@@ -5,9 +5,9 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use serde::{Deserialize, Serialize};
-use webb::evm::contract::darkwebb::{BridgeContract, BridgeContractEvents};
-use webb::evm::ethers::prelude::transaction::eip2718::TypedTransaction;
-use webb::evm::ethers::prelude::*;
+use webb::evm::contract::protocol_solidity::{BridgeContract, BridgeContractEvents};
+use webb::evm::ethers::core::types::transaction::eip2718::TypedTransaction;
+use webb::evm::ethers::contract::{LogMeta, Contract};
 use webb::evm::ethers::providers;
 use webb::evm::ethers::types;
 use webb::evm::ethers::utils;
@@ -16,7 +16,7 @@ use crate::config;
 use crate::store::sled::{SledQueueKey, SledStore};
 use crate::store::QueueStore;
 
-use super::{BridgeWatcher, EventWatcher, ProposalStore};
+use super::{BridgeWatcher, EventWatcher, ProposalStore, Middleware};
 
 type HttpProvider = providers::Provider<providers::Http>;
 
@@ -251,11 +251,11 @@ where
             .await?;
         // sanity check
         assert_eq!(contract_handler_address, data.anchor_handler_address);
-        let (status, ..) = contract
+        let proposal = contract
             .get_proposal(data.origin_chain_id, data.leaf_index as _, data_hash)
             .call()
             .await?;
-        let status = ProposalStatus::from(status);
+        let status = ProposalStatus::from(proposal.status);
         if status >= ProposalStatus::Passed {
             tracing::debug!("Skipping this proposal ... already {:?}", status);
             return Ok(());
@@ -358,7 +358,7 @@ where
         // that this proposal is passed (from the events as it sync) but in the current
         // time, this proposal is already executed (since this event is from the past).
         // that's why we need to do this check here.
-        let (status, ..) = contract
+        let proposal = contract
             .get_proposal(
                 entity.origin_chain_id,
                 entity.nonce.as_u64(),
@@ -366,7 +366,7 @@ where
             )
             .call()
             .await?;
-        let status = ProposalStatus::from(status);
+        let status = ProposalStatus::from(proposal.status);
         if status >= ProposalStatus::Executed {
             tracing::debug!(
                 "Skipping execution of proposal 0x{} since it is already {:?}",
@@ -380,7 +380,7 @@ where
         let call = contract.execute_proposal(
             entity.origin_chain_id,
             entity.nonce.as_u64(),
-            entity.data,
+            types::Bytes::from(entity.data),
             entity.resource_id,
         );
         let key = SledQueueKey::from_evm_with_custom_key(
