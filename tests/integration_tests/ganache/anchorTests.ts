@@ -158,7 +158,7 @@ describe('Anchor Tests', function () {
     recipient = '0xe8f999AC5DAa08e134735016FAcE0D6439baFF94';
   });
 
-  describe('Sunny day Anchor withdraw relayed transaction same chain', function () {
+  describe.only('Sunny day Anchor withdraw relayed transaction same chain', function () {
     before(async function () {
       this.timeout(120_000);
 
@@ -181,6 +181,11 @@ describe('Anchor Tests', function () {
 
       // allow time for the bridge proposal and execution
       console.log('waiting for bridge proposal and execution');
+      await sleep(20_000);
+
+      // create another deposit
+      await srcAnchor.deposit(chainId1);
+      console.log('waiting for another bridge proposal and execution');
       await sleep(20_000);
 
       // generate the withdraw

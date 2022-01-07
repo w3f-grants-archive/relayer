@@ -30,7 +30,8 @@ use webb::evm::ethers::{
 
 use webb::substrate::protocol_substrate_runtime::api::runtime_types::darkwebb_standalone_runtime::Element;
 use webb::substrate::subxt::{self, PairSigner, TransactionStatus};
-use webb::substrate::protocol_substrate_runtime::api::{DefaultConfig, RuntimeApi};
+use webb::substrate::protocol_substrate_runtime::api::{RuntimeApi};
+use webb::substrate::subxt::{DefaultConfig};
 use crate::context::RelayerContext;
 use crate::store::LeafCacheStore;
 

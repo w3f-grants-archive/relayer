@@ -20,23 +20,25 @@ use crate::store::sled::SledStore;
 
 type HttpProvider = providers::Provider<providers::Http>;
 
-pub struct AnchorWatcherWithSubstrate<R, C>
+pub struct AnchorWatcherWithSubstrate<R, E, C>
 where
     R: From<subxt::Client<C>>,
-    C: subxt::Config + subxt::ExtrinsicExtraData<C>,
+    E: subxt::SignedExtra<C>,
+    C: subxt::Config,
 {
     api: R,
-    pair: subxt::PairSigner<C, Sr25519Pair>,
+    pair: subxt::PairSigner<C, E, Sr25519Pair>,
 }
 
-impl<R, C> AnchorWatcherWithSubstrate<R, C>
+impl<R, E, C> AnchorWatcherWithSubstrate<R, E, C>
 where
     R: From<subxt::Client<C>>,
-    C: subxt::Config + subxt::ExtrinsicExtraData<C>,
+    E: subxt::SignedExtra<C>,
+    C: subxt::Config,
 {
     pub fn new(
         client: subxt::Client<C>,
-        pair: subxt::PairSigner<C, Sr25519Pair>,
+        pair: subxt::PairSigner<C, E, Sr25519Pair>,
     ) -> Self {
         Self {
             api: client.to_runtime_api(),
@@ -45,10 +47,10 @@ where
     }
 }
 
-type DKGConfig = dkg_runtime::api::DefaultConfig;
-type DKGRuntimeApi = dkg_runtime::api::RuntimeApi<DKGConfig>;
+type DKGConfig = subxt::DefaultConfig;
+type DKGRuntimeApi = dkg_runtime::api::RuntimeApi<DKGConfig, subxt::DefaultExtra<DKGConfig>>;
 pub type AnchorWatcherOverDKG =
-    AnchorWatcherWithSubstrate<DKGRuntimeApi, DKGConfig>;
+    AnchorWatcherWithSubstrate<DKGRuntimeApi, subxt::DefaultExtra<DKGConfig>, DKGConfig>;
 
 #[derive(Clone, Debug)]
 pub struct AnchorContractOverDKGWrapper<M>
