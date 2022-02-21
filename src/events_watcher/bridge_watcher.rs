@@ -12,6 +12,7 @@ use webb::evm::ethers::prelude::*;
 use webb::evm::ethers::providers;
 use webb::evm::ethers::types;
 use webb::evm::ethers::utils;
+use webb::resourceId::ChainType;
 
 use crate::config;
 use crate::events_watcher::{ProposalHeader, ProposalNonce};
@@ -230,8 +231,10 @@ where
     ) -> anyhow::Result<()> {
         let dest_chain_id = contract.client().get_chainid().await?;
         let mut proposal_data = Vec::with_capacity(80);
+
+        // TODO: properly handle the chain_type
         let resource_id =
-            encode_resource_id(data.anchor_address, dest_chain_id)?;
+            encode_resource_id(data.anchor_address, [1, 0], dest_chain_id)?;
         tracing::trace!("r_id: 0x{}", hex::encode(&resource_id));
         let header = ProposalHeader {
             resource_id,
@@ -436,25 +439,29 @@ where
 
 pub fn encode_resource_id(
     anchor_handler_address: types::Address,
+    chain_type: ChainType,
     chain_id: types::U256,
 ) -> anyhow::Result<[u8; 32]> {
     let mut r_id = [0u8; 32];
     // skip the first 8 bytes.
     // then write the address (20 bytes)
-    r_id[8..28].copy_from_slice(anchor_handler_address.as_fixed_bytes());
+    r_id[6..26].copy_from_slice(anchor_handler_address.as_fixed_bytes());
     // then encode the chain_id at the end, as big-endian (4 bytes)
+    r_id[26..28].copy_from_slice(&chain_type);
     let chain_id = chain_id.as_u32();
     r_id[28..32].copy_from_slice(&chain_id.to_be_bytes());
     Ok(r_id)
 }
 
-pub fn decode_resource_id(r_id: [u8; 32]) -> (types::Address, types::U256) {
+pub fn decode_resource_id(r_id: [u8; 32]) -> (types::Address, [u8; 2], types::U256) {
     let mut addr = [0u8; 20];
-    addr.copy_from_slice(&r_id[8..28]);
+    addr.copy_from_slice(&r_id[6..26]);
+    let mut chain_type_bytes = [0u8; 2];
+    chain_type_bytes.copy_from_slice(&r_id[26..28]);
     let mut chain_id_bytes = [0u8; 4];
     chain_id_bytes.copy_from_slice(&r_id[28..32]);
     let chain_id = u32::from_be_bytes(chain_id_bytes);
-    (types::Address::from(addr), types::U256::from(chain_id))
+    (types::Address::from(addr), chain_type_bytes, types::U256::from(chain_id))
 }
 
 fn make_vote_proposal_key(data_hash: &[u8]) -> [u8; 64] {
@@ -501,10 +508,11 @@ mod tests {
             "0xB42139fFcEF02dC85db12aC9416a19A12381167D",
         )
         .unwrap();
+        let chain_type: [u8; 2] = [1, 0];
         let resource_id =
-            encode_resource_id(anchor_handler_address, chain_id).unwrap();
+            encode_resource_id(anchor_handler_address, chain_type, chain_id).unwrap();
         let expected = hex::decode(
-            "0000000000000000b42139ffcef02dc85db12ac9416a19a12381167d00000004",
+            "000000000000b42139ffcef02dc85db12ac9416a19a12381167d010000000004",
         )
         .unwrap();
         assert_eq!(resource_id, expected.as_slice());
@@ -513,16 +521,18 @@ mod tests {
     #[test]
     fn should_decode_r_id() {
         let input = hex::decode(
-            "0000000000000000b42139ffcef02dc85db12ac9416a19a12381167d00000004",
+            "000000000000b42139ffcef02dc85db12ac9416a19a12381167d010000000004",
         )
         .unwrap();
         let expected_chain_id = types::U256::from(4);
+        let expected_chain_type: [u8; 2] = [1, 0];
         let expected_anchor_handler_address = types::Address::from_str(
             "0xB42139fFcEF02dC85db12aC9416a19A12381167D",
         )
         .unwrap();
-        let (addr, chain_id) = decode_resource_id(input.try_into().unwrap());
+        let (addr, chain_type, chain_id) = decode_resource_id(input.try_into().unwrap());
         assert_eq!(addr, expected_anchor_handler_address);
         assert_eq!(chain_id, expected_chain_id);
+        assert_eq!(chain_type, expected_chain_type);
     }
 }

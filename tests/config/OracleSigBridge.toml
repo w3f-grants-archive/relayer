@@ -1,0 +1,67 @@
+[evm.athenaOracle]
+enabled = true
+http-endpoint = "http://localhost:5002"
+ws-endpoint = "ws://localhost:5002"
+chain-id = 5002
+private-key = "0xc0d375903fd6f6ad3edafc2c5428900c0757ce1da10e5dd864fe387b32b91d7e"
+beneficiary = "0xd644f5331a6F26A7943CEEbB772e505cDDd21700"
+tx-queue = { max-sleep-interval = 1000 }
+
+[[evm.athenaOracle.contracts]]
+contract = "Bridge"
+address = "0x2946259E0334f33A064106302415aD3391BeD384"
+deployed-at = 1
+
+[evm.athenaOracle.contracts.events-watcher]
+enabled = true
+polling-interval = 1_000
+
+[[evm.athenaOracle.contracts]]
+contract = "Anchor"
+address = "0x7758F98C1c487E5653795470eEab6C4698bE541b"
+deployed-at = 1
+size = 1
+withdraw-fee-percentage = 0
+withdraw-gaslimit = "0x350000"
+
+[evm.athenaOracle.contracts.events-watcher]
+enabled = true
+polling-interval = 1_000
+
+[[evm.athenaOracle.contracts.linked-anchors]]
+chain = "hermesOracle"
+address = "0x510C6297cC30A058F41eb4AF1BFC9953EaD8b577"
+
+[evm.hermesOracle]
+enabled = true
+http-endpoint = "http://localhost:5001"
+ws-endpoint = "ws://localhost:5001"
+chain-id = 5001
+private-key = "0xc0d375903fd6f6ad3edafc2c5428900c0757ce1da10e5dd864fe387b32b91d7e"
+beneficiary = "0xd644f5331a6F26A7943CEEbB772e505cDDd21700"
+tx-queue = { max-sleep-interval = 1000 }
+
+[[evm.hermesOracle.contracts]]
+contract = "Bridge"
+address = "0xDe09E74d4888Bc4e65F589e8c13Bce9F71DdF4c7"
+deployed-at = 1
+
+[evm.hermesOracle.contracts.events-watcher]
+enabled = true
+polling-interval = 1_000
+
+[[evm.hermesOracle.contracts]]
+contract = "Anchor"
+address = "0x510C6297cC30A058F41eb4AF1BFC9953EaD8b577"
+deployed-at = 1
+size = 1
+withdraw-fee-percentage = 0
+withdraw-gaslimit = "0x350000"
+
+[evm.hermesOracle.contracts.events-watcher]
+enabled = true
+polling-interval = 1_000
+
+[[evm.hermesOracle.contracts.linked-anchors]]
+chain = "athenaOracle"
+address = "0x7758F98C1c487E5653795470eEab6C4698bE541b"

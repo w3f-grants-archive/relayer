@@ -13,7 +13,7 @@ export async function startGanacheServer(
 ) {
   const ganacheServer = ganache.server({
     accounts: populatedAccounts,
-    blockTime: 1,
+    instamine: 'strict',
     quiet: true,
     network_id: networkId,
     chainId: networkId,

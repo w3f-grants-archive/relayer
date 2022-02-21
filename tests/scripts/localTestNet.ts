@@ -1,29 +1,30 @@
 // This a simple script to start two local testnet chains and deploy the contracts on both of them
-
+require('dotenv').config();
 import readline from 'readline';
 import { ethers } from 'ethers';
 import { GanacheAccounts, startGanacheServer } from '../startGanacheServer';
-import { Bridge } from '@webb-tools/fixed-bridge';
-import { SignatureBridge } from '@webb-tools/fixed-bridge/lib/packages/fixed-bridge/src/SignatureBridge';
-import { SignatureBridge as SignatureBridgeContract } from '@webb-tools/contracts/lib/SignatureBridge';
+import { SignatureBridge } from '@webb-tools/bridges';
+import { SignatureBridge as SignatureBridgeContract } from '@webb-tools/contracts';
 import { MintableToken } from '@webb-tools/tokens';
-import { fetchComponentsFromFilePaths } from '@webb-tools/utils';
+import { fetchComponentsFromFilePaths, getChainIdType } from '@webb-tools/utils';
 import publicKeyToAddress from 'ethereum-public-key-to-address';
 import path from 'path';
 import toml from '@iarna/toml';
-
+import { IAnchorDeposit } from '@webb-tools/interfaces';
 
 // Let's first define a localchain
 class LocalChain {
   public readonly endpoint: string;
   private readonly server: any;
+  public readonly chainId: number;
   constructor(
     public readonly name: string,
-    public readonly chainId: number,
+    public readonly evmId: number,
     readonly initalBalances: GanacheAccounts[]
   ) {
-    this.endpoint = `http://localhost:${chainId}`;
-    this.server = startGanacheServer(chainId, chainId, initalBalances);
+    this.endpoint = `http://localhost:${evmId}`;
+    this.chainId = getChainIdType(evmId);
+    this.server = startGanacheServer(evmId, evmId, initalBalances);
   }
 
   public provider(): ethers.providers.WebSocketProvider {
@@ -42,53 +43,12 @@ class LocalChain {
     return MintableToken.createToken(name, symbol, wallet);
   }
 
-  public async deployBridge(
-    otherChain: LocalChain,
-    localToken: MintableToken,
-    otherToken: MintableToken,
-    localWallet: ethers.Signer,
-    otherWallet: ethers.Signer
-  ): Promise<Bridge> {
-    localWallet.connect(this.provider());
-    otherWallet.connect(otherChain.provider());
-    const bridgeInput = {
-      anchorInputs: {
-        asset: {
-          [this.chainId]: [localToken.contract.address],
-          [otherChain.chainId]: [otherToken.contract.address],
-        },
-        anchorSizes: [ethers.utils.parseEther('1')],
-      },
-      chainIDs: [this.chainId, otherChain.chainId],
-    };
-    const deployerConfig = {
-      [this.chainId]: localWallet,
-      [otherChain.chainId]: otherWallet,
-    };
-    const zkComponents = await fetchComponentsFromFilePaths(
-      path.resolve(
-        __dirname,
-        '../protocol-solidity-fixtures/fixtures/bridge/2/poseidon_bridge_2.wasm'
-      ),
-      path.resolve(
-        __dirname,
-        '../protocol-solidity-fixtures/fixtures/bridge/2/witness_calculator.js'
-      ),
-      path.resolve(
-        __dirname,
-        '../protocol-solidity-fixtures/fixtures/bridge/2/circuit_final.zkey'
-      )
-    );
-
-    return Bridge.deployBridge(bridgeInput, deployerConfig, zkComponents);
-  }
-
   public async deploySignatureBridge(
     otherChain: LocalChain,
     localToken: MintableToken,
     otherToken: MintableToken,
-    localWallet: ethers.Signer,
-    otherWallet: ethers.Signer
+    localWallet: ethers.Wallet,
+    otherWallet: ethers.Wallet
   ): Promise<SignatureBridge> {
     localWallet.connect(this.provider());
     otherWallet.connect(otherChain.provider());
@@ -103,9 +63,15 @@ class LocalChain {
       chainIDs: [this.chainId, otherChain.chainId],
     };
     const deployerConfig = {
+      wallets: {
+        [this.chainId]: localWallet,
+        [otherChain.chainId]: otherWallet,
+      }
+    };
+    const governorConfig = {
       [this.chainId]: localWallet,
       [otherChain.chainId]: otherWallet,
-    };
+    }
     const zkComponents = await fetchComponentsFromFilePaths(
       path.resolve(
         __dirname,
@@ -121,9 +87,10 @@ class LocalChain {
       )
     );
 
-    return SignatureBridge.deployBridge(
+    return SignatureBridge.deployFixedDepositBridge(
       bridgeInput,
       deployerConfig,
+      governorConfig,
       zkComponents
     );
   }
@@ -134,6 +101,7 @@ async function main() {
     '0x0000000000000000000000000000000000000000000000000000000000000001';
   const senderPrivateKey =
     '0x0000000000000000000000000000000000000000000000000000000000000002';
+  const recipient = '0x7Bb1Af8D06495E85DDC1e0c49111C9E0Ab50266E';
 
   const chainA = new LocalChain('Hermes', 5001, [
     {
@@ -157,62 +125,24 @@ async function main() {
   ]);
   const chainAWallet = new ethers.Wallet(relayerPrivateKey, chainA.provider());
   const chainBWallet = new ethers.Wallet(relayerPrivateKey, chainB.provider());
+
+  let chainADeposits: IAnchorDeposit[] = [];
+  let chainBDeposits: IAnchorDeposit[] = [];
+
   // do a random transfer on chainA to a random address
   // se we do have different nonce for that account.
-  await chainAWallet.sendTransaction({
+  let tx = await chainAWallet.sendTransaction({
     to: '0x0000000000000000000000000000000000000000',
     value: ethers.utils.parseEther('0.001'),
   });
+  await tx.wait();
   // Deploy the token on chainA
   const chainAToken = await chainA.deployToken('ChainA', 'webbA', chainAWallet);
   // Deploy the token on chainB
   const chainBToken = await chainB.deployToken('ChainB', 'webbB', chainBWallet);
-  // Deploy the bridge on one of the chain, will do deploy on the other too
-  const bridge = await chainA.deployBridge(
-    chainB,
-    chainAToken,
-    chainBToken,
-    chainAWallet,
-    chainBWallet
-  );
-  // get chainA bridge
-  const chainABridge = bridge.getBridgeSide(chainA.chainId);
-  // get chainB bridge
-  const chainBBridge = bridge.getBridgeSide(chainB.chainId);
-  // get the anhor on chainA
-  const chainAAnchor = bridge.getAnchor(
-    chainA.chainId,
-    ethers.utils.parseEther('1')
-  );
-  await chainAAnchor.setSigner(chainAWallet);
-  // get the anchor on chainB
-  const chainBAnchor = bridge.getAnchor(
-    chainB.chainId,
-    ethers.utils.parseEther('1')
-  );
-  await chainBAnchor.setSigner(chainBWallet);
-  // approve token spending
-  const webbATokenAddress = bridge.getWebbTokenAddress(chainA.chainId)!;
-  const webbAToken = await MintableToken.tokenFromAddress(
-    webbATokenAddress,
-    chainAWallet
-  );
-  await webbAToken.approveSpending(chainAAnchor.contract.address);
-  await webbAToken.mintTokens(
-    chainAWallet.address,
-    ethers.utils.parseEther('1000')
-  );
 
-  const webbBTokenAddress = bridge.getWebbTokenAddress(chainB.chainId)!;
-  const webbBToken = await MintableToken.tokenFromAddress(
-    webbBTokenAddress,
-    chainBWallet
-  );
-  await webbBToken.approveSpending(chainBAnchor.contract.address);
-  await webbBToken.mintTokens(
-    chainBWallet.address,
-    ethers.utils.parseEther('1000')
-  );
+  console.log('ChainAToken: ', chainAToken.contract.address);
+  console.log('ChainBToken: ', chainBToken.contract.address);
 
   // athena
   let athenaContracts = {
@@ -222,36 +152,7 @@ async function main() {
       },
     },
   };
-  // bridge
-  athenaContracts.evm.athenadkg.contracts.push({
-    contract: 'Bridge',
-    address: chainBBridge.contract.address,
-    'deployed-at': 1,
-    'events-watcher': {
-      enabled: true,
-      'polling-interval': 1000,
-    },
-  });
-  // anchor
-  athenaContracts.evm.athenadkg.contracts.push({
-    contract: 'AnchorOverDKG',
-    'dkg-node': 'dkglocal',
-    address: chainBAnchor.contract.address,
-    'deployed-at': 1,
-    size: 1,
-    'events-watcher': {
-      enabled: true,
-      'polling-interval': 1000,
-    },
-    'withdraw-fee-percentage': 0,
-    'withdraw-gaslimit': '0x350000',
-    'linked-anchors': [
-      {
-        chain: 'hermesdkg',
-        address: chainAAnchor.contract.address,
-      },
-    ],
-  });
+
   // hermes
   let hermesContracts = {
     evm: {
@@ -260,49 +161,7 @@ async function main() {
       },
     },
   };
-  // bridge
-  hermesContracts.evm.hermesdkg.contracts.push({
-    contract: 'Bridge',
-    address: chainABridge.contract.address,
-    'deployed-at': 1,
-    'events-watcher': {
-      enabled: true,
-      'polling-interval': 1000,
-    },
-  });
-  // anchor
-  hermesContracts.evm.hermesdkg.contracts.push({
-    contract: 'AnchorOverDKG',
-    'dkg-node': 'dkglocal',
-    address: chainAAnchor.contract.address,
-    'deployed-at': 1,
-    size: 1,
-    'events-watcher': {
-      enabled: true,
-      'polling-interval': 1000,
-    },
-    'withdraw-fee-percentage': 0,
-    'withdraw-gaslimit': '0x350000',
-    'linked-anchors': [
-      {
-        chain: 'athenadkg',
-        address: chainBAnchor.contract.address,
-      },
-    ],
-  });
 
-  console.log('Chain A (Hermes):', chainA.endpoint);
-  console.log('Chain B (Athena):', chainB.endpoint);
-  console.log(' --- --- --- --- --- --- --- --- --- --- --- --- ---');
-  console.log('ChainA bridge (Hermes): ', chainABridge.contract.address);
-  console.log('ChainA anchor (Hermes): ', chainAAnchor.contract.address);
-  console.log('ChainA token (Hermes): ', chainAToken.contract.address);
-  console.log(' --- --- --- --- --- --- --- --- --- --- --- --- ---');
-  console.log('ChainB bridge (Athena): ', chainBBridge.contract.address);
-  console.log('ChainB anchor (Athena): ', chainBAnchor.contract.address);
-  console.log('ChainB token (Athena): ', chainBToken.contract.address);
-
-  console.log('\n');
   // Deploy the signature bridge.
   const signatureBridge = await chainA.deploySignatureBridge(
     chainB,
@@ -315,40 +174,54 @@ async function main() {
   const chainASignatureBridge = signatureBridge.getBridgeSide(chainA.chainId)!;
   // get chainB bridge
   const chainBSignatureBridge = signatureBridge.getBridgeSide(chainB.chainId)!;
-  // get the anhor on chainA
+  // get the anchor on chainA
   const chainASignatureAnchor = signatureBridge.getAnchor(
     chainA.chainId,
     ethers.utils.parseEther('1')
   )!;
   await chainASignatureAnchor.setSigner(chainAWallet);
+
+  const chainAHandler = await chainASignatureAnchor.getHandler();
+  console.log('Chain A Handler address: ', chainAHandler)
+
   // get the anchor on chainB
   const chainBSignatureAnchor = signatureBridge.getAnchor(
     chainB.chainId,
     ethers.utils.parseEther('1')
   )!;
   await chainBSignatureAnchor.setSigner(chainBWallet);
+
+  const chainBHandler = await chainBSignatureAnchor.getHandler();
+  console.log('Chain B Handler address: ', chainBHandler)
+  
   // approve token spending
   const webbASignatureTokenAddress = signatureBridge.getWebbTokenAddress(
     chainA.chainId
   )!;
+  console.log('webbATokenAddress: ', webbASignatureTokenAddress);
+
   const webbASignatureToken = await MintableToken.tokenFromAddress(
     webbASignatureTokenAddress,
     chainAWallet
   );
-  await webbASignatureToken.approveSpending(
+  tx = await webbASignatureToken.approveSpending(
     chainASignatureAnchor.contract.address
   );
+  await tx.wait();
   await webbASignatureToken.mintTokens(
     chainAWallet.address,
     ethers.utils.parseEther('1000')
   );
 
   const webbBSignatureTokenAddress = signatureBridge.getWebbTokenAddress(chainB.chainId)!;
+  console.log('webbBTokenAddress: ', webbBSignatureTokenAddress);
+
   const webbBSignatureToken = await MintableToken.tokenFromAddress(
     webbBSignatureTokenAddress,
     chainBWallet
   );
-  await webbBSignatureToken.approveSpending(chainBSignatureAnchor.contract.address);
+  tx = await webbBSignatureToken.approveSpending(chainBSignatureAnchor.contract.address);
+  await tx.wait();
   await webbBSignatureToken.mintTokens(
     chainBWallet.address,
     ethers.utils.parseEther('1000')
@@ -433,7 +306,7 @@ async function main() {
     'ChainB anchor (Athena): ',
     chainBSignatureAnchor.contract.address
   );
-  console.log('ChainB token (Athena): ', webbASignatureToken.contract.address);
+  console.log('ChainB token (Athena): ', webbBSignatureToken.contract.address);
   console.log('\n');
   // print the config for both networks
   console.log('Hermes config:');
@@ -466,19 +339,54 @@ async function main() {
     // check if cmd is deposit chainA
     if (cmd.startsWith('deposit on chain a')) {
       console.log('Depositing Chain A, please wait...');
-      const deposit = await chainAAnchor.deposit(chainB.chainId);
-      console.log('Deposit on chain A: ', deposit.deposit);
       const deposit2 = await chainASignatureAnchor.deposit(chainB.chainId);
-      console.log('Deposit on chain A (signature): ', deposit2.deposit);
+      chainADeposits.push(deposit2);
+      console.log('Deposit on chain A (signature): ', deposit2);
+      // await signatureBridge.updateLinkedAnchors(chainASignatureAnchor);
       return;
     }
 
     if (cmd.startsWith('deposit on chain b')) {
       console.log('Depositing Chain B, please wait...');
-      const deposit = await chainBAnchor.deposit(chainA.chainId);
-      console.log('Deposit on chain B: ', deposit.deposit);
       const deposit2 = await chainBSignatureAnchor.deposit(chainA.chainId);
-      console.log('Deposit on chain B (signature): ', deposit2.deposit);
+      chainBDeposits.push(deposit2);
+      console.log('Deposit on chain B (signature): ', deposit2);
+      // await signatureBridge.updateLinkedAnchors(chainASignatureAnchor);
+      return;
+    }
+
+    if (cmd.startsWith('withdraw on chain a')) {
+      // take a deposit from the chain B
+      await signatureBridge.updateLinkedAnchors(chainBSignatureAnchor);
+
+      const result = await signatureBridge.withdraw(
+        chainBDeposits.pop()!,
+        ethers.utils.parseEther('1'),
+        recipient,
+        chainAWallet.address,
+        chainAWallet
+      );
+      result ? console.log('withdraw success') : console.log('withdraw failure');
+      return;
+    }
+
+    if (cmd.startsWith('withdraw on chain b')) {
+      // take a deposit from the chain B
+      await signatureBridge.updateLinkedAnchors(chainASignatureAnchor);
+
+      let result: boolean = false;
+      try {
+        result = await signatureBridge.withdraw(
+          chainADeposits.pop()!,
+          ethers.utils.parseEther('1'),
+          recipient,
+          chainBWallet.address,
+          chainBWallet
+        );
+      } catch (e) {
+        console.log('ERROR: ', e);
+      }
+      result ? console.log('withdraw success') : console.log('withdraw failure');
       return;
     }
 
@@ -486,8 +394,6 @@ async function main() {
       const txs = parseInt(cmd.match(/^spam chain a (\d+)$/)?.[1] ?? '1');
       console.log(`Spamming Chain A with ${txs} Tx, please wait...`);
       for (let i = 0; i < txs; i++) {
-        const deposit = await chainAAnchor.deposit(chainB.chainId);
-        console.log('Deposit on chain A: ', deposit.deposit);
         const deposit2 = await chainASignatureAnchor.deposit(chainB.chainId);
         console.log('Deposit on chain A (signature): ', deposit2.deposit);
       }
@@ -498,8 +404,6 @@ async function main() {
       const txs = parseInt(cmd.match(/^spam chain b (\d+)$/)?.[1] ?? '1');
       console.log(`Spamming Chain B with ${txs}, please wait...`);
       for (let i = 0; i < txs; i++) {
-        const deposit = await chainBAnchor.deposit(chainA.chainId);
-        console.log('Deposit on chain B: ', deposit.deposit);
         const deposit2 = await chainBSignatureAnchor.deposit(chainA.chainId);
         console.log('Deposit on chain B (signature): ', deposit2.deposit);
       }
@@ -528,13 +432,6 @@ async function main() {
     }
 
     if (cmd.startsWith('root on chain a')) {
-      console.log('Root on chain A, please wait...');
-      const root = await chainAAnchor.contract.getLastRoot();
-      const latestNeighborRoots =
-        await chainAAnchor.contract.getLatestNeighborRoots();
-      console.log('Root on chain A: ', root);
-      console.log('Latest neighbor roots on chain A: ', latestNeighborRoots);
-      console.log('\n');
       console.log('Root on chain A (signature), please wait...');
       const root2 = await chainASignatureAnchor.contract.getLastRoot();
       const latestNeighborRoots2 =
@@ -548,13 +445,6 @@ async function main() {
     }
 
     if (cmd.startsWith('root on chain b')) {
-      console.log('Root on chain B, please wait...');
-      const root = await chainBAnchor.contract.getLastRoot();
-      const latestNeighborRoots =
-        await chainBAnchor.contract.getLatestNeighborRoots();
-      console.log('Root on chain B: ', root);
-      console.log('Latest neighbor roots on chain B: ', latestNeighborRoots);
-      console.log('\n');
       console.log('Root on chain B (signature), please wait...');
       const root2 = await chainBSignatureAnchor.contract.getLastRoot();
       const latestNeighborRoots2 =
@@ -576,6 +466,8 @@ function printAvailableCommands() {
   console.log('Available commands:');
   console.log('  deposit on chain a');
   console.log('  deposit on chain b');
+  console.log('  withdraw on chain a');
+  console.log('  withdraw on chain b');
   console.log('  root on chain a');
   console.log('  root on chain b');
   console.log('  spam chain a <txs>');

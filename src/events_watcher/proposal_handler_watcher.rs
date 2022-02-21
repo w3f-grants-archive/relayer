@@ -61,7 +61,7 @@ impl SubstrateEventWatcher for ProposalHandlerWatcher {
         // 4. get the bridge address from the anchor handler.
         // 5. finally, create the Bridge Key.
         let header = ProposalHeader::decode(&event.data)?;
-        let (anchor_handler_address, chain_id) =
+        let (anchor_handler_address, _, chain_id) =
             decode_resource_id(header.resource_id);
         let client = self.ctx.evm_provider_by_chain_id(chain_id).await?;
         let anchor_handler_contract = AnchorHandlerContract::new(

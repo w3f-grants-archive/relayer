@@ -12,6 +12,7 @@ use webb::evm::ethers::providers;
 use webb::evm::ethers::types;
 use webb::substrate::subxt::sp_core::sr25519::Pair as Sr25519Pair;
 use webb::substrate::{dkg_runtime, subxt};
+use webb::substrate::dkg_runtime::api::runtime_types::dkg_runtime_primitives::ChainIdType;
 
 use crate::config;
 use crate::events_watcher::{
@@ -177,8 +178,10 @@ impl super::EventWatcher for AnchorWatcherOverDKG {
                 merkle_root: root,
             };
             let mut proposal_data = Vec::with_capacity(80);
+
+            // TODO: Properly handle the chain type
             let resource_id =
-                encode_resource_id(data.anchor_handler_address, dest_chain_id)?;
+                encode_resource_id(data.anchor_handler_address, [1, 0], dest_chain_id)?;
             let header = ProposalHeader {
                 resource_id,
                 function_sig: data.function_sig,
@@ -201,12 +204,12 @@ impl super::EventWatcher for AnchorWatcherOverDKG {
             // 1. check if the origin_chain_id is whitleisted.
             let storage_api = self.api.storage().dkg_proposals();
             let maybe_whitelisted = storage_api
-                .chain_nonces(data.src_chain_id.as_u32(), None)
+                .chain_nonces(ChainIdType::EVM(data.src_chain_id.as_u32()), None)
                 .await?;
             match maybe_whitelisted {
                 Some(last_seen_nonce) => {
                     // check if the proposal nonce is greater than the last seen nonce.
-                    if last_seen_nonce > header.nonce {
+                    if u64::from(last_seen_nonce) > header.nonce {
                         // we skip this proposal, already seen.
                         tracing::warn!(
                             last_seen_nonce,
@@ -245,7 +248,7 @@ impl super::EventWatcher for AnchorWatcherOverDKG {
             );
             let xt = tx_api.acknowledge_proposal(
                 data.leaf_index as _,
-                data.src_chain_id.as_u32(),
+                ChainIdType::EVM(data.src_chain_id.as_u32()),
                 resource_id,
                 proposal_data,
             );

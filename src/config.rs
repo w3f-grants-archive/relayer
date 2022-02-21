@@ -222,6 +222,7 @@ pub enum Contract {
     Tornado(TornadoContractConfig),
     Anchor(AnchorContractConfig),
     AnchorOverDKG(AnchorContractOverDKGConfig),
+    AnchorOracle(AnchorContractOracleConfig),
     Bridge(BridgeContractConfig),
     SignatureBridge(SignatureBridgeContractConfig),
     GovernanceBravoDelegate(GovernanceBravoDelegateContractConfig),
@@ -305,6 +306,25 @@ pub struct AnchorContractOverDKGConfig {
     #[serde(rename(serialize = "linkedAnchors"), default)]
     pub linked_anchors: Vec<LinkedAnchorConfig>,
 }
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub struct AnchorContractOracleConfig {
+    #[serde(flatten)]
+    pub common: CommonContractConfig,
+    /// Controls the events watcher
+    #[serde(rename(serialize = "eventsWatcher"))]
+    pub events_watcher: EventsWatcherConfig,
+    /// The size of this contract
+    pub size: f64,
+    /// Anchor withdraw configuration.
+    #[serde(flatten)]
+    pub withdraw_config: AnchorWithdrawConfig,
+    /// A List of linked Anchor Contracts (on other chains) to this contract.
+    #[serde(rename(serialize = "linkedAnchors"), default)]
+    pub linked_anchors: Vec<LinkedAnchorConfig>,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub struct BridgeContractConfig {

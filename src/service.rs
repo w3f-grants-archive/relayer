@@ -57,6 +57,15 @@ pub async fn ignite(
                     )
                     .await?;
                 }
+                Contract::AnchorOracle(config) => {
+                    start_anchor_oracle_events_watcher(
+                        ctx,
+                        config,
+                        client.clone(),
+                        store.clone(),
+                    )
+                    .await?;
+                }
                 Contract::Bridge(config) => {
                     start_bridge_watcher(
                         ctx,
@@ -334,6 +343,56 @@ async fn start_anchor_over_dkg_events_watcher(
             _ = anchor_over_dkg_watcher_task => {
                 tracing::warn!(
                     "Anchor over dkg watcher task stopped for ({})",
+                    contract_address,
+                );
+            },
+            _ = shutdown_signal.recv() => {
+                tracing::trace!(
+                    "Stopping Anchor watcher for ({})",
+                    contract_address,
+                );
+            },
+        }
+    };
+    // kick off the watcher.
+    tokio::task::spawn(task);
+
+    Ok(())
+}
+
+async fn start_anchor_oracle_events_watcher(
+    ctx: &RelayerContext,
+    config: &AnchorContractOracleConfig,
+    client: Arc<Client>,
+    store: Arc<Store>,
+) -> anyhow::Result<()> {
+    if !config.events_watcher.enabled {
+        tracing::warn!(
+            "Anchor Oracle events watcher is disabled for ({}).",
+            config.common.address,
+        );
+        return Ok(());
+    }
+    let wrapper = AnchorOracleContractWrapper::new(
+        config.clone(),
+        ctx.config.clone(), // the original config to access all networks.
+        client.clone(),
+    );
+
+    let mut shutdown_signal = ctx.shutdown_signal();
+    let contract_address = config.common.address;
+    let task = async move {
+        tracing::debug!(
+            "Anchor Oracle events watcher for ({}) Started.",
+            contract_address,
+        );
+        let watcher =
+            AnchorOracleWatcher::new();
+        let anchor_oracle_watcher_task = watcher.run(client, store, wrapper);
+        tokio::select! {
+            _ = anchor_oracle_watcher_task => {
+                tracing::warn!(
+                    "Anchor Oracle watcher task stopped for ({})",
                     contract_address,
                 );
             },

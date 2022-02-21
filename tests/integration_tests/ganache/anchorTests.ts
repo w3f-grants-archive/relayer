@@ -1,7 +1,7 @@
 import { assert } from 'chai';
 import { ethers } from 'ethers';
 import WebSocket from 'ws';
-import { Bridge, Anchor } from '@webb-tools/fixed-bridge';
+import { SignatureBridge } from '@webb-tools/bridges';
 import { MintableToken } from '@webb-tools/tokens';
 import { fetchComponentsFromFilePaths, toFixedHex } from '@webb-tools/utils';
 import {
@@ -16,6 +16,7 @@ import {
 import { startGanacheServer } from '../../startGanacheServer';
 import { ChildProcessWithoutNullStreams } from 'child_process';
 import path from 'path';
+import { Anchor } from '@webb-tools/anchors';
 
 // deployer and relayer same private key so proposals can be voted and executed
 let relayerPrivateKey =
@@ -38,7 +39,7 @@ let provider2: ethers.providers.JsonRpcProvider;
 let relayer: ChildProcessWithoutNullStreams;
 let relayerEndpoint: string;
 let recipient: string;
-let bridge: Bridge;
+let bridge: SignatureBridge;
 let relayerChain1Info: RelayerChainConfig;
 let relayerChain2Info: RelayerChainConfig;
 
@@ -110,9 +111,15 @@ describe('Anchor Tests', function () {
       chainIDs: [chainId1, chainId2],
     };
     const deployerConfig = {
+      wallets: {
+        [chainId1]: wallet1,
+        [chainId2]: wallet2,
+      }
+    };
+    const governorConfig = {
       [chainId1]: wallet1,
       [chainId2]: wallet2,
-    };
+    }
     const zkComponents = await fetchComponentsFromFilePaths(
       path.resolve(
         __dirname,
@@ -128,9 +135,10 @@ describe('Anchor Tests', function () {
       )
     );
 
-    bridge = await Bridge.deployBridge(
+    bridge = await SignatureBridge.deployFixedDepositBridge(
       bridgeInput,
       deployerConfig,
+      governorConfig,
       zkComponents
     );
 
@@ -149,6 +157,15 @@ describe('Anchor Tests', function () {
       wallet2
     );
     await webbToken2.mintTokens(senderAddress, '1000000000000000000000');
+
+    console.log('---------------------------');
+    console.log('token 1: ', webbTokenAddress1);
+    console.log('anchor 1: ', (bridge.getAnchor(chainId1, '1000000000000000000')).contract.address);
+    console.log('bridge 1: ', (bridge.getBridgeSide(chainId1).contract.address));
+    console.log('token 2: ', webbTokenAddress2);
+    console.log('anchor 2: ', (bridge.getAnchor(chainId2, '1000000000000000000')).contract.address);
+    console.log('bridge 2: ', (bridge.getBridgeSide(chainId2).contract.address));
+    console.log('---------------------------');
 
     // Setup webb relayer
     console.log('Starting the Relayer ..');
@@ -284,10 +301,10 @@ describe('Anchor Tests', function () {
       const chainBBridge = bridge.getBridgeSide(chainId2);
       console.log('chainABridge: ', chainABridge.contract.address);
       console.log('chainBBridge: ', chainBBridge.contract.address);
-      const srcAnchor = await bridge.getAnchor(chainId1, '1000000000000000000');
+      const srcAnchor = (await bridge.getAnchor(chainId1, '1000000000000000000')) as Anchor;
       console.log('Chain A Anchor Address: ', srcAnchor.contract.address);
       await srcAnchor.setSigner(sourceWallet);
-      console.log(`before deposits, there are ${srcAnchor.tree.totalElements} leaves in the tree`);
+      console.log(`before deposits, there are ${srcAnchor.tree.number_of_elements()} leaves in the tree`);
 
       // approve token spending
       const webbToken1Address = await bridge.getWebbTokenAddress(chainId1)!;
@@ -328,10 +345,10 @@ describe('Anchor Tests', function () {
       const { pathElements, pathIndices } = srcAnchor.tree.path(deposit.index);
 
       // update the destAnchor
-      const destAnchor = await bridge.getAnchor(
+      const destAnchor = (await bridge.getAnchor(
         chainId2,
         '1000000000000000000'
-      );
+      ) as Anchor);
       console.log('Chain B Anchor Address: ', destAnchor.contract.address);
       anchorContractAddress = destAnchor.contract.address;
 

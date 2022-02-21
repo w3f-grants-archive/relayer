@@ -9,14 +9,14 @@ tx-queue = { max-sleep-interval = 1000 }
 
 [[evm.testb.contracts]]
 contract = "Anchor"
-address = "0x79Cf3cd11AAA862BfA104ED7034e7a69E20bDE88"
+address = "0x2B51Caf55990164475864f5f63a5b9a707Ff0F41"
 deployed-at = 1
 size = 1
 events-watcher = { enabled = true, polling-interval = 500, print-progress-interval = 0 }
 withdraw-fee-percentage = 0
 withdraw-gaslimit = "0x350000"
 linked-anchors = [
-  { chain = "testa", address = "0xE42D67A86822Afd957CbC533Ce80426326060eb8" },
+  { chain = "testa", address = "0x855960C25a62e28d46AC1A99530F09ECfb38D28E" },
 ]
 
 [[evm.testb.contracts]]

@@ -28,7 +28,7 @@ use webb::evm::ethers::{
     types::Bytes,
 };
 
-use webb::substrate::protocol_substrate_runtime::api::runtime_types::darkwebb_standalone_runtime::Element;
+use webb::substrate::protocol_substrate_runtime::api::runtime_types::webb_standalone_runtime::Element;
 use webb::substrate::subxt::{self, PairSigner, TransactionStatus};
 use webb::substrate::subxt::{DefaultConfig};
 use webb::substrate::protocol_substrate_runtime::api::RuntimeApi;

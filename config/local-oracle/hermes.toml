@@ -1,0 +1,19 @@
+[evm.hermes]
+http-endpoint = "http://localhost:5001"
+ws-endpoint = "ws://localhost:5001"
+chain-id = 5001
+private-key = "0x0000000000000000000000000000000000000000000000000000000000000001"
+tx-queue = { max-sleep-interval = 1500 }
+enabled = true
+
+[[evm.hermes.contracts]]
+contract = "AnchorOracle"
+address = "0x510C6297cC30A058F41eb4AF1BFC9953EaD8b577"
+deployed-at = 1
+size = 1
+events-watcher = { enabled = true, polling-interval = 1000, print-progress-interval = 0 }
+withdraw-fee-percentage = 0
+withdraw-gaslimit = "0x350000"
+linked-anchors = [
+  { chain = "athena", address = "0x7758F98C1c487E5653795470eEab6C4698bE541b" },
+]

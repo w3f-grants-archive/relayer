@@ -43,6 +43,9 @@ pub use anchor_watcher_over_dkg::*;
 mod proposal_handler_watcher;
 pub use proposal_handler_watcher::*;
 
+mod anchor_oracle_watcher;
+pub use anchor_oracle_watcher::*;
+
 /// A watchable contract is a contract used in the [EventWatcher]
 pub trait WatchableContract: Send + Sync {
     /// The block number where this contract is deployed.
