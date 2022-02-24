@@ -11,6 +11,7 @@ import publicKeyToAddress from 'ethereum-public-key-to-address';
 import path from 'path';
 import toml from '@iarna/toml';
 import { IAnchorDeposit } from '@webb-tools/interfaces';
+import { Anchor } from '@webb-tools/anchors';
 
 // Let's first define a localchain
 class LocalChain {
@@ -101,7 +102,7 @@ async function main() {
     '0x0000000000000000000000000000000000000000000000000000000000000001';
   const senderPrivateKey =
     '0x0000000000000000000000000000000000000000000000000000000000000002';
-  const recipient = '0x7Bb1Af8D06495E85DDC1e0c49111C9E0Ab50266E';
+  const recipient = '0xd644f5331a6F26A7943CEEbB772e505cDDd21700';
 
   const chainA = new LocalChain('Hermes', 5001, [
     {
@@ -112,6 +113,10 @@ async function main() {
       balance: ethers.utils.parseEther('1000').toHexString(),
       secretKey: senderPrivateKey,
     },
+    {
+      balance: ethers.utils.parseEther('1000').toHexString(),
+      secretKey: '0xc0d375903fd6f6ad3edafc2c5428900c0757ce1da10e5dd864fe387b32b91d7e',
+    },
   ]);
   const chainB = new LocalChain('Athena', 5002, [
     {
@@ -121,6 +126,10 @@ async function main() {
     {
       balance: ethers.utils.parseEther('1000').toHexString(),
       secretKey: senderPrivateKey,
+    },
+    {
+      balance: ethers.utils.parseEther('1000').toHexString(),
+      secretKey: '0xc0d375903fd6f6ad3edafc2c5428900c0757ce1da10e5dd864fe387b32b91d7e',
     },
   ]);
   const chainAWallet = new ethers.Wallet(relayerPrivateKey, chainA.provider());
@@ -321,6 +330,16 @@ async function main() {
   });
   printAvailableCommands();
 
+  await webbASignatureToken.mintTokens(
+    '0xd644f5331a6F26A7943CEEbB772e505cDDd21700',
+    ethers.utils.parseEther('1000')
+  );
+
+  await webbBSignatureToken.mintTokens(
+    '0xd644f5331a6F26A7943CEEbB772e505cDDd21700',
+    ethers.utils.parseEther('1000')
+  );
+
   // setup readline
   const rl = readline.createInterface({
     input: process.stdin,
@@ -355,10 +374,17 @@ async function main() {
       return;
     }
 
-    if (cmd.startsWith('withdraw on chain a')) {
-      // take a deposit from the chain B
-      await signatureBridge.updateLinkedAnchors(chainBSignatureAnchor);
+    if (cmd.startsWith('relay from a to b')) {
+      await (chainASignatureAnchor as Anchor).update(chainASignatureAnchor.latestSyncedBlock);
+      await signatureBridge.updateLinkedAnchors(chainASignatureAnchor);
+    }
 
+    if (cmd.startsWith('relay from b to a')) {
+      await (chainBSignatureAnchor as Anchor).update(chainBSignatureAnchor.latestSyncedBlock);
+      await signatureBridge.updateLinkedAnchors(chainBSignatureAnchor);
+    }
+
+    if (cmd.startsWith('withdraw on chain a')) {
       const result = await signatureBridge.withdraw(
         chainBDeposits.pop()!,
         ethers.utils.parseEther('1'),
@@ -371,10 +397,8 @@ async function main() {
     }
 
     if (cmd.startsWith('withdraw on chain b')) {
-      // take a deposit from the chain B
-      await signatureBridge.updateLinkedAnchors(chainASignatureAnchor);
-
       let result: boolean = false;
+      // take a deposit from the chain A
       try {
         result = await signatureBridge.withdraw(
           chainADeposits.pop()!,
@@ -466,6 +490,8 @@ function printAvailableCommands() {
   console.log('Available commands:');
   console.log('  deposit on chain a');
   console.log('  deposit on chain b');
+  console.log('  relay from a to b');
+  console.log('  relay from b to a');
   console.log('  withdraw on chain a');
   console.log('  withdraw on chain b');
   console.log('  root on chain a');

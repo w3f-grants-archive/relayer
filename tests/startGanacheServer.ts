@@ -13,10 +13,12 @@ export async function startGanacheServer(
 ) {
   const ganacheServer = ganache.server({
     accounts: populatedAccounts,
-    instamine: 'strict',
-    quiet: true,
+    // quiet: true,
     network_id: networkId,
     chainId: networkId,
+    miner: {
+      blockTime: 1,
+    },
     ...options,
   });
 

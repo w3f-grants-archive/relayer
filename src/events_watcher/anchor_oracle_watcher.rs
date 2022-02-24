@@ -300,12 +300,23 @@ impl super::EventWatcher for AnchorWatcher<ForOracle> {
                 proposal_data
             );
 
+            tracing::debug!(
+                "hashed_data: {:?}",
+                hashed_data
+            );
+
             let signed_data = wallet.sign_hash(hashed_data, false);
             let formatted_data = signed_data.to_vec();
 
             tracing::debug!(
                 "formatted data of signature: {:?}",
                 formatted_data
+            );
+
+            let formatted_data_bytes = Bytes::from(formatted_data.clone());
+            tracing::debug!(
+                "formatted data in bytes (and printed) {:?}",
+                formatted_data_bytes.to_string()
             );
 
             dest_bridge_side.execute_proposal_with_signature(Bytes::from(hashed_data.as_bytes().to_vec()), Bytes::from(formatted_data)).call().await?;
