@@ -27,7 +27,9 @@ export function startGanacheServer(
 ): Server<'ethereum'> {
   const ganacheServer = ganache.server({
     accounts: populatedAccounts,
-    quiet: true,
+    quiet: false,
+    blockTime: 1,
+    miner: 'strict',
     network_id: networkId,
     chainId: networkId,
     ...options,

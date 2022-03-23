@@ -10,7 +10,7 @@ import getPort, { portNumbers } from 'get-port';
 import { LocalChain } from './lib/localTestnet';
 import { calcualteRelayerFees, WebbRelayer } from './lib/webbRelayer';
 
-describe.skip('EVM Transaction Relayer', () => {
+describe('EVM Transaction Relayer', () => {
   const PK1 =
     '0xc0d375903fd6f6ad3edafc2c5428900c0757ce1da10e5dd864fe387b32b91d7e';
   const PK2 =
@@ -89,7 +89,8 @@ describe.skip('EVM Transaction Relayer', () => {
       tokenAddress,
       wallet1
     );
-    await token.approveSpending(anchor.contract.address);
+    let tx = await token.approveSpending(anchor.contract.address);
+    await tx.wait();
     await token.mintTokens(wallet1.address, ethers.utils.parseEther('1000'));
 
     // do the same but on localchain2
@@ -106,7 +107,8 @@ describe.skip('EVM Transaction Relayer', () => {
       wallet2
     );
 
-    await token2.approveSpending(anchor2.contract.address);
+    tx = await token2.approveSpending(anchor2.contract.address);
+    await tx.wait();
     await token2.mintTokens(wallet2.address, ethers.utils.parseEther('1000'));
 
     // now start the relayer
@@ -168,8 +170,17 @@ describe.skip('EVM Transaction Relayer', () => {
     const txHash = await webbRelayer.anchorWithdraw(
       localChain1.chainId.toString(),
       anchor1.getAddress(),
-      `0x${withdrawalInfo.proofEncoded}`,
-      withdrawalInfo.publicInputs
+      `0x${withdrawalInfo.publicInputs.proof}`,
+      {
+        publicInputs: withdrawalInfo.publicInputs,
+        externalData: {
+          _refreshCommitment: withdrawalInfo.extData._refreshCommitment,
+          _recipient: withdrawalInfo.extData._recipient,
+          _refund: withdrawalInfo.extData._refund,
+          _fee: withdrawalInfo.extData._fee,
+          _relayer: withdrawalInfo.extData._relayer,
+        },
+      }
     );
     expect(txHash).toBeDefined();
   });

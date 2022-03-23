@@ -1,6 +1,6 @@
 import WebSocket from 'ws';
 import fetch from 'node-fetch';
-import { IFixedAnchorPublicInputs } from '@webb-tools/interfaces';
+import { IFixedAnchorPublicInputs, IFixedAnchorExtData } from '@webb-tools/interfaces';
 import { ChildProcess, spawn, execSync } from 'child_process';
 import { EventEmitter } from 'events';
 import JSONStream from 'JSONStream';
@@ -12,6 +12,11 @@ export type WebbRelayerOptions = {
   configDir: string;
   buildDir?: 'debug' | 'release';
   showLogs?: boolean;
+};
+
+export type AnchorWithdrawTxInputs = {
+  publicInputs: IFixedAnchorPublicInputs,
+  externalData: IFixedAnchorExtData,
 };
 
 export class WebbRelayer {
@@ -133,13 +138,13 @@ export class WebbRelayer {
     chainName: string,
     anchorAddress: string,
     proof: `0x${string}`,
-    publicInputs: IFixedAnchorPublicInputs
+    inputs: AnchorWithdrawTxInputs,
   ): Promise<`0x${string}`> {
     const wsEndpoint = `ws://127.0.0.1:${this.opts.port}/ws`;
     // create a new websocket connection to the relayer.
     const ws = new WebSocket(wsEndpoint);
     await new Promise((resolve) => ws.once('open', resolve));
-    const input = { chainName, anchorAddress, proof, publicInputs };
+    const input = { chainName, anchorAddress, proof, input: inputs };
     return txHashOrReject(ws, input);
   }
 }
@@ -162,12 +167,12 @@ async function txHashOrReject(
     chainName,
     anchorAddress,
     proof,
-    publicInputs,
+    input,
   }: {
     chainName: string;
     anchorAddress: string;
     proof: `0x${string}`;
-    publicInputs: IFixedAnchorPublicInputs;
+    input: AnchorWithdrawTxInputs;
   }
 ): Promise<`0x${string}`> {
   return new Promise((resolve, reject) => {
@@ -226,13 +231,13 @@ async function txHashOrReject(
           chain: chainName,
           contract: anchorAddress,
           proof,
-          roots: publicInputs._roots,
-          nullifierHash: publicInputs._nullifierHash,
-          refreshCommitment: publicInputs._refreshCommitment,
-          recipient: publicInputs._recipient,
-          relayer: publicInputs._relayer,
-          fee: publicInputs._fee,
-          refund: publicInputs._refund,
+          roots: input.publicInputs._roots,
+          nullifierHash: input.publicInputs._nullifierHash,
+          refreshCommitment: input.externalData._refreshCommitment,
+          recipient: input.externalData._recipient,
+          relayer: input.externalData._relayer,
+          fee: input.externalData._fee,
+          refund: input.externalData._refund,
         },
       },
     };
