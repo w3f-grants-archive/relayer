@@ -25,7 +25,7 @@ import {
 } from '@webb-tools/sdk-core';
 
 describe('Substrate Transaction Relayer', function () {
-  this.timeout(60000);
+  this.timeout(12000000);
   const tmp = temp.track();
   const tmpDirPath = tmp.mkdirSync({ prefix: 'webb-relayer-test-' });
   let aliceNode: LocalProtocolSubstrate;
@@ -47,17 +47,21 @@ describe('Substrate Transaction Relayer', function () {
       authority: 'alice',
       usageMode,
       ports: 'auto',
+      enableLogging: true,
     });
 
-    bobNode = await LocalProtocolSubstrate.start({
+
+
+    /*bobNode = await LocalProtocolSubstrate.start({
       name: 'substrate-bob',
       authority: 'bob',
       usageMode,
       ports: 'auto',
-    });
+      enableLogging: true,
+    })*/
 
     await aliceNode.writeConfig({
-      path: `${tmpDirPath}/${aliceNode.name}.json`,
+      path: `${tmpDirPath}/substrate-alice.json`,
       suri: '//Charlie',
     });
 
@@ -73,7 +77,7 @@ describe('Substrate Transaction Relayer', function () {
   });
 
   it('Simple Mixer Transaction', async () => {
-    const api = await aliceNode.api();
+    const api = await LocalProtocolSubstrate.getApi('ws://127.0.0.1:9944');
     const { tx, note } = await createMixerDepositTx(api);
     const keyring = new Keyring({ type: 'sr25519' });
     const charlie = keyring.addFromUri('//Charlie');
@@ -99,8 +103,18 @@ describe('Substrate Transaction Relayer', function () {
     // ping the relayer!
     await webbRelayer.ping();
     // now we need to submit the withdrawal transaction.
+    console.log(`node  name in test is ${api.rpc.system.chain.name}`)
+    const [chain, nodeName, nodeVersion] = await Promise.all([
+      api.rpc.system.chain(),
+      api.rpc.system.name(),
+      api.rpc.system.version()
+    ]);
+
+    console.log(`chain is ${chain}`)
+    console.log(`node name is ${nodeName.toString()}`)
+    console.log(`node version is ${nodeVersion}`)
     const txHash = await webbRelayer.substrateMixerWithdraw({
-      chain: aliceNode.name,
+      chain: 'substrate-alice',
       id: withdrawalProof.id,
       proof: Array.from(hexToU8a(withdrawalProof.proofBytes)),
       root: Array.from(hexToU8a(withdrawalProof.root)),
@@ -114,9 +128,9 @@ describe('Substrate Transaction Relayer', function () {
   });
 
   after(async () => {
-    await aliceNode.stop();
-    await bobNode.stop();
-    await webbRelayer.stop();
+    //await aliceNode.stop();
+    //await bobNode.stop();
+    //await webbRelayer.stop();
     tmp.cleanupSync(); // clean up the temp dir.
   });
 });

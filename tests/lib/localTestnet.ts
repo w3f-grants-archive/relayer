@@ -28,7 +28,7 @@ import { MintableToken } from '@webb-tools/tokens';
 import { fetchComponentsFromFilePaths } from '@webb-tools/utils';
 import path from 'path';
 import child from 'child_process';
-import { ChainInfo, Contract, EventsWatcher } from './webbRelayer';
+import {ChainInfo, Contract, EventsWatcher, SigningBackend} from './webbRelayer';
 import { ConvertToKebabCase } from './tsHacks';
 
 export type GanacheAccounts = {
@@ -159,7 +159,8 @@ export class LocalChain {
   }
 
   public async exportConfig(
-    signatureBridge?: Bridges.SignatureBridge
+    signatureBridge?: Bridges.SignatureBridge,
+    signingBackend?: SigningBackend
   ): Promise<FullChainInfo> {
     const bridge = signatureBridge ?? this.signatureBridge;
     if (!bridge) {
@@ -197,6 +198,7 @@ export class LocalChain {
           deployedAt: 1,
           size: 1, // Ethers
           withdrawFeePercentage: 0,
+          'dkg-node': signingBackend ?? undefined,
           eventsWatcher: { enabled: true, pollingInterval: 1000 },
           linkedAnchors: otherAnchors.map(([chainId, anchor]) => ({
             chain: chainId.toString(),
@@ -212,9 +214,10 @@ export class LocalChain {
 
   public async writeConfig(
     path: string,
-    signatureBridge?: Bridges.SignatureBridge
+    signatureBridge?: Bridges.SignatureBridge,
+    signingBackend?: SigningBackend
   ): Promise<void> {
-    const config = await this.exportConfig(signatureBridge);
+    const config = await this.exportConfig(signatureBridge, signingBackend);
     // don't mind my typescript typing here XD
     type ConvertedContract = Omit<
       ConvertToKebabCase<Contract>,
@@ -246,6 +249,7 @@ export class LocalChain {
         address: contract.address,
         'deployed-at': contract.deployedAt,
         size: contract.size,
+        'dkg-node': contract['dkg-node'],
         'withdraw-gaslimit': '0x5B8D80',
         'withdraw-fee-percentage': contract.withdrawFeePercentage,
         'events-watcher': {

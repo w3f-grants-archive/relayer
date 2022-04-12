@@ -25,8 +25,8 @@ import { LocalChain } from '../lib/localTestnet.js';
 import { calcualteRelayerFees, WebbRelayer } from '../lib/webbRelayer.js';
 import getPort, { portNumbers } from 'get-port';
 
-describe.skip('EVM Transaction Relayer', function () {
-  this.timeout(120_000);
+describe('EVM Transaction Relayer', function () {
+  this.timeout(5000);
   const PK1 =
     '0xc0d375903fd6f6ad3edafc2c5428900c0757ce1da10e5dd864fe387b32b91d7e';
   const PK2 =
@@ -88,11 +88,13 @@ describe.skip('EVM Transaction Relayer', function () {
     // save the chain configs.
     await localChain1.writeConfig(
       `${tmpDirPath}/${localChain1.name}.json`,
-      signatureBridge
+      signatureBridge,
+        /** Signing Backend */ 'none',
     );
     await localChain2.writeConfig(
       `${tmpDirPath}/${localChain2.name}.json`,
-      signatureBridge
+      signatureBridge,
+        /** Signing Backend */ 'none'
     );
 
     // get the anhor on localchain1
@@ -135,11 +137,13 @@ describe.skip('EVM Transaction Relayer', function () {
       port: relayerPort,
       tmp: true,
       configDir: tmpDirPath,
+      showLogs: true
     });
     await webbRelayer.waitUntilReady();
   });
 
   it('should relay same transaction on same chain', async () => {
+    console.log("started testing")
     // we will use chain1 as an example here.
     const anchor1 = signatureBridge.getAnchor(
       localChain1.chainId,

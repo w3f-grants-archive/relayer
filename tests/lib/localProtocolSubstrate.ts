@@ -33,13 +33,14 @@ export type NodeOptions = {
     | 'auto';
   authority: 'alice' | 'bob' | 'charlie';
   usageMode: UsageMode;
+  enableLogging?: boolean;
 };
 
 export class LocalProtocolSubstrate {
   #api: ApiPromise | null = null;
   private constructor(
     private readonly opts: NodeOptions,
-    private readonly process: ChildProcess
+    private readonly process?: ChildProcess,
   ) {}
 
   public get name(): string {
@@ -51,7 +52,7 @@ export class LocalProtocolSubstrate {
   ): Promise<LocalProtocolSubstrate> {
     if (opts.ports === 'auto') {
       opts.ports = {
-        ws: await getPort({ port: portNumbers(9944, 9999) }),
+        ws: 9944,
         http: await getPort({ port: portNumbers(9933, 9999) }),
         p2p: await getPort({ port: portNumbers(30333, 30399) }),
       };
@@ -80,23 +81,64 @@ export class LocalProtocolSubstrate {
         '--ws-external',
         `--${opts.authority}`
       );
-      const proc = spawn('docker', startArgs, {});
-      return new LocalProtocolSubstrate(opts, proc);
+
+      return new LocalProtocolSubstrate(opts);
     } else {
       startArgs.push(
         '--tmp',
         '--rpc-cors',
         'all',
         '--ws-external',
-        `--ws-port=${opts.ports.ws}`,
+        `--ws-port=9944`,
         `--rpc-port=${opts.ports.http}`,
         `--port=${opts.ports.p2p}`,
+          '-linfo',
         `--${opts.authority}`
       );
-      const proc = spawn(opts.usageMode.nodePath, startArgs);
-      return new LocalProtocolSubstrate(opts, proc);
+
+      return new LocalProtocolSubstrate(opts);
     }
   }
+
+  public static async getApi(endpoint: string): Promise<ApiPromise> {
+    const api = await ApiPromise.create({
+      provider: new WsProvider(endpoint),
+      rpc: {
+        mt: {
+          getLeaves: {
+            description: 'Query for the tree leaves',
+            params: [
+              {
+                name: 'tree_id',
+                type: 'u32',
+                isOptional: false,
+              },
+              {
+                name: 'from',
+                type: 'u32',
+                isOptional: false,
+              },
+              {
+                name: 'to',
+                type: 'u32',
+                isOptional: false,
+              },
+              {
+                name: 'at',
+                type: 'Hash',
+                isOptional: true,
+              },
+            ],
+            type: 'Vec<[u8; 32]>',
+          },
+        },
+      },
+    });
+
+   return api;
+  }
+
+
 
   public async api(): Promise<ApiPromise> {
     if (this.#api) {
@@ -143,7 +185,7 @@ export class LocalProtocolSubstrate {
   public async stop(): Promise<void> {
     await this.#api?.disconnect();
     this.#api = null;
-    this.process.kill('SIGINT');
+    //this.process.kill('SIGINT');
   }
 
   public async waitForEvent(typedEvent: TypedEvent): Promise<void> {
@@ -247,6 +289,7 @@ export class LocalProtocolSubstrate {
       });
     }
   }
+
 }
 
 export type FullNodeInfo = NodeInfo & {

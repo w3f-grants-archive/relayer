@@ -400,7 +400,7 @@ export interface Contract {
   size: number;
   withdrawGaslimit?: `0x${string}`;
   withdrawFeePercentage?: number;
-  'dkg-node'?: string;
+  'dkg-node'?: any;
   linkedAnchors?: LinkedAnchor[];
 }
 
@@ -478,6 +478,10 @@ type ParsedRelayerMessage =
   | ErrorMessage
   | UnimplementedMessage
   | { kind: 'unknown' };
+
+export type DKGSigningBackend = string; /** DKG Node name in the config */
+export type MockedSigningBackend = { signer: string }; /** Signer private key */
+export type SigningBackend = DKGSigningBackend | MockedSigningBackend;
 
 function parseRelayTxMessage(o: any): ParsedRelayerMessage {
   if (o.pong) {

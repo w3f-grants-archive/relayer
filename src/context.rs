@@ -126,6 +126,8 @@ impl RelayerContext {
         &self,
         node_name: &str,
     ) -> anyhow::Result<subxt::Client<C>> {
+        println!("node name is {:?}", node_name);
+
         let node_config = self
             .config
             .substrate
