@@ -258,7 +258,46 @@ export class WebbRelayer {
     };
     return substrateTxHashOrReject(ws, cmd);
   }
+
+  public async substrateVAnchorWithdraw(inputs: {
+    chain: string;
+    id: number;
+    proofData: {
+      proof: number[],
+      publicAmount: number[],
+      roots: number[][],
+      inputNullifiers: number[][],
+      outputCommitments: number[][],
+      extDataHash: number[]
+    };
+    extData: {
+      recipient: string,
+      relayer: string,
+      extAmount: number,
+      fee: number,
+      encryptedOutput1: number[],
+      encryptedOutput2: number[]
+    }
+  }): Promise<`0x${string}`> {
+    const wsEndpoint = `ws://127.0.0.1:${this.opts.port}/ws`;
+    // create a new websocket connection to the relayer.
+    const ws = new WebSocket(wsEndpoint);
+    await new Promise((resolve) => ws.once('open', resolve));
+
+    const cmd = {
+      substrate: {
+        vanchor: {
+          chain: inputs.chain,
+          id: inputs.id,
+          proofData: inputs.proofData,
+          extData: inputs.extData,
+        },
+      },
+    };
+    return substrateTxHashOrReject(ws, cmd);
+  }
 }
+
 
 export function calcualteRelayerFees(
   denomination: string,
