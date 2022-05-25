@@ -17,6 +17,7 @@ import { u8aToHex, hexToU8a } from '@polkadot/util';
 import { ModuleErrors, SubmittableExtrinsic } from '@polkadot/api/types';
 import { decodeAddress } from '@polkadot/util-crypto';
 import {
+  MixerPMSetupInput,
   Note,
   NoteGenInput,
   ProvingManagerSetupInput,
@@ -446,7 +447,7 @@ async function createMixerWithdrawProof(
     );
     const provingKey = fs.readFileSync(provingKeyPath);
 
-    const proofInput: ProvingManagerSetupInput = {
+    const proofInput: MixerPMSetupInput = {
       note: note.serialize(),
       relayer: relayerAddressHex,
       recipient: recipientAddressHex,
@@ -456,7 +457,7 @@ async function createMixerWithdrawProof(
       refund: opts.refund === undefined ? 0 : opts.refund,
       provingKey,
     };
-    const zkProof = await pm.proof(proofInput);
+    const zkProof = await pm.prove('mixer', proofInput);
     return {
       id: treeId,
       proofBytes: `0x${zkProof.proof}`,
