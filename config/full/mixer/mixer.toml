@@ -1,0 +1,23 @@
+## EGGNET - MIXER CONFIGURATION 
+##
+## Configured to support private transaction relaying for Substrate mixer pallet.
+## 
+## Pallets supported:
+## - Mixer 
+##
+## Configuration supports the following networks:
+## - Eggnet test network 
+##
+## NOTE: Ensure private key or suri are not exposed in this file!
+##
+
+[substrate.eggnet]
+enabled=true
+http-endpoint = "https://standalone.webb.tools:9933/"
+ws-endpoint = "ws://standalone.webb.tools:9944/"
+runtime = "egg-standalone"
+suri = "//Eve"
+
+[[substrate.eggnet.pallets]]
+pallet = "Mixer"
+events-watcher = { enabled = true, polling-interval = 3000 }

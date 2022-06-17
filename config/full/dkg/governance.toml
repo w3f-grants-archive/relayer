@@ -1,0 +1,23 @@
+## EGGNET CONFIGURATION 
+##
+## Configured to support... 
+## 
+## Pallets supported:
+## - DKGProposalHandler 
+##
+## Configuration supports the following networks:
+## - Eggnet test network 
+##
+## NOTE: Ensure private key or suri are not exposed in this file!
+##
+
+[substrate.eggnet]
+enabled=true
+http-endpoint = "https://standalone.webb.tools:9933/"
+ws-endpoint = "ws://standalone.webb.tools:9944/"
+runtime = "egg-standalone"
+suri = "//Eve"
+
+[[substrate.eggnet.pallets]]
+pallet = "DKGProposalHandler"
+events-watcher = { enabled = true, polling-interval = 3000 }
